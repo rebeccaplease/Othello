@@ -8,49 +8,29 @@ public class Othello{
    static ArrayList<Move> legalMoves = new ArrayList<Move>();
    static char blank = 0;
 
-   public static void main(String[] args) throws FileNotFoundException{
-      // Scanner sc = new Scanner(new File("test.txt"));
-   
-      // int r = 0; 
-      // int c = 0;
-      // while(sc.hasNext()){
-      //    if(c > size-1){
-      //       r++;
-      //       c = 0;
-      //    }
-      //    board[r][c] = sc.nextInt();
-      //    c++;
-      // }
-      // sc.close();
+   public static void main(String[] args){
 
-      //fill up board
-
-      
-      for(int r = 0; r < size; r++){
-         for(int c = 0; c < size; c++){
-            board[r][c] = blank;
-         }
-      }
-
-      board[3][3] = 1;
-      board[3][4] = 2;
-      board[4][3] = 2;
-      board[4][4] = 1;
-
-      printBoard();
-      //player,enemy
-      validMove(2,1);
-      printLegalMoves();
-      // char one = 1;
-      // char two = 2;
-      // printBoard();
-      // validMove(one, two);
-
-      //init();
+      init();
       
    }
 
-   public static void testBoar
+   public static void loadBoard(String filename) throws FileNotFoundException{
+
+      Scanner sc = new Scanner(new File(filename));
+   
+      int r = 0; 
+      int c = 0;
+      while(sc.hasNext()){
+         if(c > size-1){
+            r++;
+            c = 0;
+         }
+         board[r][c] = sc.nextInt();
+         c++;
+      }
+      sc.close();
+   }
+
 
    public static void init(){
       for(int r = 0; r < size; r++){
@@ -144,7 +124,7 @@ public class Othello{
          chosen = legalMoves.get(random);
       }
       board[chosen.row][chosen.col] = current.symbol;
-      printBoard();
+     
    }
 
 	//find all legal moves and add to the legalMoves ArrayList
