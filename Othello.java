@@ -17,7 +17,7 @@ public class Othello{
    public static void loadBoard(String filename) throws FileNotFoundException{
 
       Scanner sc = new Scanner(new File(filename));
-   
+
       int r = 0; 
       int c = 0;
       while(sc.hasNext()){
@@ -108,13 +108,14 @@ public class Othello{
       if(legalMoves.size() == 0){ //if there are no valid moves
 
       }
+      //print board with legal moves
       printBoard();
       printLegalMoves();
       Move chosen;
       if(!current.ai){ //if player is human 
          //need to check for valid input
          // boolean entered = false;
-         
+
          System.out.println("Pick a move!");
 
          chosen = legalMoves.get(in.nextInt());
@@ -124,8 +125,125 @@ public class Othello{
          chosen = legalMoves.get(random);
       }
       board[chosen.row][chosen.col] = current.symbol;
-     
+      //flip valid pieces
+
+      flip(chosen.row, chosen.col, current.symbol, enemy);
+
    }
+   public static void flip(int r, int c, int player, int enemy){
+      int row = r;
+      int col = c;
+      if(validSearch("left", r, c, player, enemy))
+         board[r-1][c] = player;
+      if(validSearch("right", r, c, player, enemy))
+         board[r+1][c] = player;
+      if(validSearch("up", r, c, player, enemy))
+         board[r][c-1] = player;
+      if(validSearch("down", r, c, player, enemy))
+         board[r][c+1] = player;
+      if(validSearch("leftup", r, c, player, enemy))
+         board[r-1][c-1] = player;
+      if(validSearch("leftdown", r, c, player, enemy))
+         board[r-1][c+1] = player;
+      if(validSearch("rightup", r, c, player, enemy))
+         board[r+1][c-1] = player;
+      if(validSearch("rightdown", r, c, player, enemy))
+         board[r+1][c+1] = player;
+   }
+
+  /* public static boolean flip(Move move, int player, int enemy, int row, int col){
+      //base case
+      //if out of bounds or space is blank, then it is not a valid direction
+      if(row < 0 || row > size-1 || col < 0 || col > size-1 || board[row][col] == blank){
+         return false;
+      }
+
+      if(board[row-1][col] == player ){
+         //if the space away is player and not the adjacent position
+         if(Math.abs(move.row - row) > 1|| Math.abs(move.col - col) > 1)
+            return true;
+      }
+      else if(board[row-1][col] == enemy){
+         //left
+         if(flip(move, player, enemy, row-1, col)) //***
+            board[row-1][col] = player;
+      }
+
+      if(board[row+1][col] == player ){
+         if(Math.abs(move.row - row) > 1|| Math.abs(move.col - col) > 1)
+            return true;
+      }
+      else if(board[row+1][col] == enemy){
+         //right
+         if(flip(move, player, enemy, row+1, col)) //****
+            board[row+1][col] = player;
+      }
+
+      if(board[row][col-1] == player ){
+         if(Math.abs(move.row - row) > 1|| Math.abs(move.col - col) > 1)
+            return true;
+      }
+      else if(board[row][col-1] == enemy){
+         //up
+         if(flip(move, player, enemy, row, col-1))
+            board[row][col-1] = player;
+      }
+
+      if(board[row][col+1] == player ){
+         if(Math.abs(move.row - row) > 1|| Math.abs(move.col - col) > 1)
+            return true;
+      }
+      else if(board[row][col+1] == enemy){
+         //down
+         if(flip(move, player, enemy, row, col+1))
+            board[row][col+1] = player;
+      }
+
+      if(board[row-1][col-1] == player ){
+         if(Math.abs(move.row - row) > 1|| Math.abs(move.col - col) > 1)
+            return true;
+      }
+      else if(board[row-1][col-1] == enemy){
+         //leftup
+         if(flip(move, player, enemy, row-1, col-1))
+            board[row-1][col-1] = player;
+      }
+
+      if(board[row-1][col+1] == player ){
+         if(Math.abs(move.row - row) > 1|| Math.abs(move.col - col) > 1)
+            return true;
+      }
+      else if(board[row-1][col+1] == enemy){
+         //leftdown
+         if(flip(move, player, enemy, row-1, col+1))
+            board[row-1][col+1] = player;
+      }
+
+      if(board[row+1][col-1] == player ){
+         if(Math.abs(move.row - row) > 1|| Math.abs(move.col - col) > 1)
+            return true;
+      }
+      else if(board[row+1][col-1] == enemy){
+         //rightup
+         if(flip(move, player, enemy, row+1, col-1))
+            board[row+1][col-1] = player;
+      }
+
+      if(board[row+1][col+1] == player ){
+         if(Math.abs(move.row - row) > 1|| Math.abs(move.col - col) > 1)
+            return true;
+      }
+      else if(board[row+1][col+1] == enemy){
+         //rightup
+         if(flip(move, player, enemy, row+1, col+1))
+            board[row+1][col+1] = player;
+      }
+      
+      return false;
+   }
+   */
+
+
 
 	//find all legal moves and add to the legalMoves ArrayList
    public static void validMove(int player, int enemy){
@@ -134,39 +252,39 @@ public class Othello{
       for(int r = 0; r < size; r++){
          for(int c = 0; c < size; c++){
             if(board[r][c] == blank){
-            
+
                boolean added = false;
             	//search left
                added = validSearch("left", r, c, player, enemy);
-            
+
             	//search right
                if(!added)
                   added = validSearch("right", r, c, player, enemy);
-            
+
             	//search below
                if(!added)
                   added = validSearch("down", r, c, player, enemy);
-            
+
             	//search above
                if(!added)
                   added = validSearch("up", r, c, player, enemy);
-            
+
             	//search diagonal left up
                if(!added)
                   added = validSearch("leftup", r, c, player, enemy);
-            
+
             	//search diagonal left down
                if(!added)
                   added = validSearch("leftdown", r, c, player, enemy);
-            
+
             	//search diagonal right up
                if(!added)
                   added = validSearch("rightup", r, c, player, enemy);
-            
+
             	//search diagonal right down
                if(!added)
                   added = validSearch("rightdown", r, c, player, enemy);
-            
+
             }
          }
       }
@@ -179,7 +297,7 @@ public class Othello{
       if(dir.equals("left")){
          while(c > 0) {  
             c--;
-         
+
             if(board[r][c] == blank)
                return false;
             	//if friendly piece is encountered 
@@ -198,7 +316,7 @@ public class Othello{
       else if(dir.equals("right")){
          while(c < size-1){  
             c++;
-         
+
             if (board[r][c] == blank)
                return false;
             	//if friendly piece is encountered 
@@ -229,7 +347,7 @@ public class Othello{
                return true;
             }
          }
-      
+
          return false;
       }
       else if(dir.equals("down")){
