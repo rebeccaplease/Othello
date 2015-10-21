@@ -65,9 +65,10 @@ public class Othello{
          computer = new Player(comp,true);
       }
       else{ //computer v computer
-        comp = 1;
-        player = new Player(p,true);
-        computer = new Player(comp,true);
+         comp = 1;
+         p = 2;
+         player = new Player(p,true);
+         computer = new Player(comp,true);
       }
 
       while(!gameOver){
@@ -106,7 +107,7 @@ public class Othello{
 
    public static void printBoard(){
     //save string?
-      System.out.println("     A     B     C     D     E     F     G     H");
+      System.out.println("\n     A     B     C     D     E     F     G     H");
       System.out.println("   ================================================");
       for(int r = 0; r < size; r++){
          System.out.println("  |     |     |     |     |     |     |     |     |");
@@ -121,7 +122,7 @@ public class Othello{
          System.out.println("\n  |     |     |     |     |     |     |     |     |");
          System.out.println("   -----------------------------------------------");
       }
-      System.out.println("     A     B     C     D     E     F     G     H");
+      System.out.println("     A     B     C     D     E     F     G     H\n");
     //System.out.println("   ================================");
    }
 
@@ -300,6 +301,7 @@ public class Othello{
             if(Math.abs(orgC-c) == 1)
                break;
             p[i++] = new Position(r,c+1);
+            break;
          }
       }
       c = orgC;
@@ -315,6 +317,7 @@ public class Othello{
             if(Math.abs(orgC-c) == 1)
                break;
             p[i++] = new Position(r,c-1);
+            break;
          }
       }
       c = orgC;
@@ -322,7 +325,6 @@ public class Othello{
    //up
       while(r > 0){
          r--;
-
          if (board[r][c] == blank)
             break;
       //if friendly piece is encountered
@@ -331,6 +333,7 @@ public class Othello{
             if(Math.abs(orgR-r) == 1)
                break;
             p[i++] = new Position(r+1,c);
+            break;
          }
       }
       r = orgR;
@@ -346,6 +349,7 @@ public class Othello{
             if(Math.abs(orgR-r) == 1)
                break;
             p[i++] = new Position(r-1,c);
+            break;
          }
       }
       r = orgR;
@@ -362,6 +366,7 @@ public class Othello{
             if(Math.abs(orgR-r) == 1 && Math.abs(orgC-c) == 1)
                break;
             p[i++] = new Position(r+1,c+1);
+            break;
          }
       }
       c = orgC;
@@ -379,6 +384,7 @@ public class Othello{
             if(Math.abs(orgR-r) == 1 && Math.abs(orgC-c) == 1)
                break;
             p[i++] = new Position(r-1,c+1);
+            break;
          }
       }
       c = orgC;
@@ -396,6 +402,7 @@ public class Othello{
             if(Math.abs(orgR-r) == 1 && Math.abs(orgC-c) == 1)
                break;
             p[i++] = new Position(r+1,c-1);
+            break;
          }
       }
       c = orgC;
@@ -413,6 +420,7 @@ public class Othello{
             if(Math.abs(orgR-r) == 1 && Math.abs(orgC-c) == 1)
                break;
             p[i++] = new Position(r-1,c-1);
+            break;
          }
       }
    //add this legal move to the array list
