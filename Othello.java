@@ -48,19 +48,26 @@ public class Othello{
 
 
       Scanner in = new Scanner(System.in);
-      System.out.println("Do you want to go first[1] or second[2]?");//need to catch invalid inputs
+      System.out.println("Do you want to go first[1] or second[2]? [3] for computer v. computer");//need to catch invalid inputs
       int p = in.nextInt();
       char comp;
-      Player player = new Player(p,false);
+      Player player;
       Player computer;
 
       if(p == 1){
          comp = 2;
+         player = new Player(p,false);
          computer = new Player(comp,true);
       }
-      else{
+      else if (p == 2){
          comp = 1;
+         player = new Player(p,false);
          computer = new Player(comp,true);
+      }
+      else{ //computer v computer
+        comp = 1;
+        player = new Player(p,true);
+        computer = new Player(comp,true);
       }
 
       while(!gameOver){
@@ -99,18 +106,22 @@ public class Othello{
 
    public static void printBoard(){
     //save string?
-      System.out.println("    0   1   2   3   4   5   6   7");
-      System.out.println("   ================================");
+      System.out.println("     A     B     C     D     E     F     G     H");
+      System.out.println("   ================================================");
       for(int r = 0; r < size; r++){
+         System.out.println("  |     |     |     |     |     |     |     |     |");
          System.out.print(r + " |");
          for(int c = 0; c < size; c++){
             if(board[r][c] == blank)
-               System.out.print("   |");
+               System.out.print("     |");
             else
-               System.out.print(" " + board[r][c] + " |");
+               System.out.print("  " + board[r][c] + "  |");
          }
-         System.out.println("\n   --------------------------------");
+         System.out.print(" " + r);
+         System.out.println("\n  |     |     |     |     |     |     |     |     |");
+         System.out.println("   -----------------------------------------------");
       }
+      System.out.println("     A     B     C     D     E     F     G     H");
     //System.out.println("   ================================");
    }
 
@@ -357,7 +368,7 @@ public class Othello{
       r = orgR;
 
    //leftdown
-      while(c > 0 && r > size-1){
+      while(c > 0 && r < size-1){
          c--;
          r++;
          if (board[r][c] == blank)
@@ -391,7 +402,7 @@ public class Othello{
       r = orgR;
 
    //rightdown
-      while(c < size-1 && r > size-1 ){
+      while(c < size-1 && r < size-1 ){
          c++;
          r++;
          if (board[r][c] == blank)
