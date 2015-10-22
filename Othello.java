@@ -4,11 +4,21 @@ import java.util.*;
 
 public class Othello{
    static int size = 8;
-   static int[][] board = new int[size][size];
+   static char[][] board = new char[size][size];
    static ArrayList<Move> legalMoves = new ArrayList<Move>();
    static char blank = 0;
    static boolean skipped = false; //keep track if previous turn was skipped
    static boolean gameOver = false;
+
+   public static final String ANSI_RESET = "\u001B[0m";
+   public static final String ANSI_BLACK = "\u001B[30m";
+   public static final String ANSI_RED = "\u001B[31m";
+   public static final String ANSI_GREEN = "\u001B[32m";
+   public static final String ANSI_YELLOW = "\u001B[33m";
+   public static final String ANSI_BLUE = "\u001B[34m";
+   public static final String ANSI_PURPLE = "\u001B[35m";
+   public static final String ANSI_CYAN = "\u001B[36m";
+   public static final String ANSI_WHITE = "\u001B[37m";
 
    public static void main(String[] args){
 
@@ -23,12 +33,16 @@ public class Othello{
       int r = 0;
       int c = 0;
       while(sc.hasNext()){
-         if(c > size-1){
-            r++;
-            c = 0;
-         }
-         board[r][c] = sc.nextInt();
-         c++;
+        //  if(c > size-1){
+        //     r++;
+        //     c = 0;
+        //  }
+        //  board[r][c] = sc.next();
+        //  c++;
+        String temp = sc.nextLine();
+        for(int k = 0; k < size; k++){
+          board[r][c] = temp.charAt(k);
+        }
       }
       sc.close();
    }
@@ -41,10 +55,10 @@ public class Othello{
          }
       }
 
-      board[3][3] = 1;
-      board[3][4] = 2;
-      board[4][3] = 2;
-      board[4][4] = 1;
+      board[3][3] = '#';
+      board[3][4] = 'Z';
+      board[4][3] = 'Z';
+      board[4][4] = '#';
 
 
       Scanner in = new Scanner(System.in);
@@ -55,33 +69,36 @@ public class Othello{
       Player computer;
 
       if(p == 1){
-         comp = 2;
-         player = new Player(p,false);
-         computer = new Player(comp,true);
+         //comp = Z;
+         player = new Player('#',false);
+         computer = new Player('Z',true);
       }
       else if (p == 2){
          comp = 1;
-         player = new Player(p,false);
-         computer = new Player(comp,true);
+         player = new Player('Z',false);
+         computer = new Player('#',true);
       }
       else{ //computer v computer
          comp = 1;
          p = 2;
-         player = new Player(p,true);
-         computer = new Player(comp,true);
+         player = new Player('Z',true);
+         computer = new Player('#',true);
       }
+      //printBoard(player, computer);
 
       while(!gameOver){
       //while(true){
          if(p == 1){
             play(player, computer, in);
             gameOver = stateCheck(player, computer);
+
             play(computer, player, in);
             gameOver = stateCheck(player, computer);
          }
          else {
             play(computer, player, in);
             gameOver = stateCheck(player, computer);
+
             play(player, computer, in);
             gameOver = stateCheck(player, computer);
          }
@@ -105,42 +122,50 @@ public class Othello{
          return false;
    }
 
+
    public static void printBoard(){
-    //save string?
-      System.out.println("\n     A     B     C     D     E     F     G     H");
-      System.out.println("   ================================================");
+    //  char[][] temp = board;
+    //  int index = '0';
+    //  for(Move object: legalMoves){
+    //        temp[object.valid.row][object.valid.col] = (char)(index);
+    //        index++;
+    //  }
+
+      System.out.println("\n      A       B       C       D       E       F       G       H");
+      System.out.println("   ===============================================================");
       for(int r = 0; r < size; r++){
-         System.out.println("  |     |     |     |     |     |     |     |     |");
+         System.out.println("  |       |       |       |       |       |       |       |       |");
          System.out.print(r + " |");
          for(int c = 0; c < size; c++){
-            if(board[r][c] == blank)
-               System.out.print("     |");
+            int current = board[r][c];
+            if(current == blank)
+               System.out.print("       |");
             else
-               System.out.print("  " + board[r][c] + "  |");
+               if(current == 'Z')
+                System.out.print("   " +ANSI_CYAN+ board[r][c] +ANSI_RESET+ "   |");
+               else if (current == '#')
+                System.out.print("   " +ANSI_RED+ board[r][c] +ANSI_RESET+ "   |");
+               //else
+                //System.out.print(ANSI_GREEN + "  ["+ board[r][c] + "]  "+ ANSI_RESET+ "|");
          }
          System.out.print(" " + r);
-         System.out.println("\n  |     |     |     |     |     |     |     |     |");
-         System.out.println("   -----------------------------------------------");
+         System.out.println("\n  |       |       |       |       |       |       |       |       |");
+         System.out.println("   ---------------------------------------------------------------");
       }
-      System.out.println("     A     B     C     D     E     F     G     H\n");
+      System.out.println("      A       B       C       D       E       F       G       H\n");
     //System.out.println("   ================================");
    }
 
    public static void printLegalMoves(){
-    //System.out.println("printing legal moves " + legalMoves.size());
-      int index = 0;
+     int index = 0;
       for(Move object: legalMoves){
-         if (index != 0){
-            System.out.println("["+ index + "] " + object.toString());
-            index++;
-         }
-         else
-            index++;
+            System.out.println("["+ index++ + "] " + object.toString());
       }
    }
 
    public static void play(Player current, Player enemy, Scanner in){
       validMove(current.symbol, enemy.symbol); //fill arraylist with possible moves
+
     //print board with legal moves
       printBoard();
       System.out.println("Current Scores: ");
@@ -148,7 +173,7 @@ public class Othello{
       System.out.println(enemy.symbol + ": " + enemy.score);
       printLegalMoves();
       Move chosen;
-      if(legalMoves.size() == 1){ //if there are no valid moves
+      if(legalMoves.size() == 0){ //if there are no valid moves
          if(skipped)
             gameOver = true;
          else
@@ -157,17 +182,20 @@ public class Othello{
 
       else{
          skipped = false;
-
+         if(current.symbol == 'Z'){
+           System.out.println(ANSI_CYAN+"Pick a move!"+ANSI_RESET);
+        }
+       else{
+          System.out.println(ANSI_RED+"Pick a move!"+ANSI_RESET);
+       }
          if(!current.ai){ //if player is human
          //need to check for valid input
-         // boolean entered = false;
-
-            System.out.println("Pick a move!");
 
             chosen = legalMoves.get(in.nextInt());
          }
          else{ //if computer
             int random = (int)(Math.random()*(legalMoves.size()-1)) + 1; //not including zero
+            System.out.println(random);
             chosen = legalMoves.get(random);
          }
 
@@ -273,7 +301,7 @@ public class Othello{
    public static void validMove(int player, int enemy){
    //loop through board
       legalMoves.clear(); //clear list
-      legalMoves.add(null); //skip turn option
+      //legalMoves.add(null); //skip turn option
       for(int r = 0; r < size; r++)
          for(int c = 0; c < size; c++)
             if(board[r][c] == blank)
@@ -443,7 +471,8 @@ public class Othello{
    //   location = p;
    // }
       public String toString(){
-         return "("+ (valid.row) + "," + (valid.col) + ")";
+        int c = (char)valid.col + 'A';
+        return "("+ (valid.row) + "," + (char)c + ")";
       }
    }
 //(x,y) coordinates of a move
@@ -458,10 +487,10 @@ public class Othello{
    }
 
    public static class Player{
-      int symbol;
+      char symbol;
       boolean ai;
       int score = 2;
-      public Player(int s, boolean comp){
+      public Player(char s, boolean comp){
          symbol = s;
          ai = comp;
       }
