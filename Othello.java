@@ -33,10 +33,10 @@ public class Othello{
       int r = 0;
       int c = 0;
       while(sc.hasNext()){
-        String temp = sc.nextLine();
-        for(int k = 0; k < size; k++){
-          board[r][c] = temp.charAt(k);
-        }
+         String temp = sc.nextLine();
+         for(int k = 0; k < size; k++){
+            board[r][c] = temp.charAt(k);
+         }
       }
       sc.close();
    }
@@ -121,9 +121,16 @@ public class Othello{
 
 
    public static void printBoard(char[][] board, ArrayList<Move> legalMoves){
-     for(Move object: legalMoves){
-           board[object.valid.row][object.valid.col] = ' ';
-     }
+     //for holding a copy of the array to make moves on
+      char[][] bCopy = new char[size][size];
+     //copy the array
+      for(int k = 0; k < size; k++){
+         System.arraycopy( board[k], 0, bCopy[k], 0, board[k].length );
+      }
+
+      for(Move object: legalMoves){
+         bCopy[object.valid.row][object.valid.col] = ' ';
+      }
 
       System.out.println("\n      A       B       C       D       E       F       G       H");
       System.out.println("   ===============================================================");
@@ -131,32 +138,28 @@ public class Othello{
          System.out.println("  |       |       |       |       |       |       |       |       |");
          System.out.print(r + " |");
          for(int c = 0; c < size; c++){
-            int current = board[r][c];
+            int current = bCopy[r][c];
             if(current == blank)
                System.out.print("       |");
             else
                if(current == 'Z')
-                System.out.print("   " +ANSI_CYAN+ board[r][c] +ANSI_RESET+ "   |");
+                  System.out.print("   " +ANSI_CYAN+ board[r][c] +ANSI_RESET+ "   |");
                else if (current == '#')
-                System.out.print("   " +ANSI_RED+ board[r][c] +ANSI_RESET+ "   |");
+                  System.out.print("   " +ANSI_RED+ board[r][c] +ANSI_RESET+ "   |");
                else
-                System.out.print(ANSI_GREEN + "  ["+ board[r][c] + "]  "+ ANSI_RESET+ "|");
+                  System.out.print(ANSI_GREEN + "  ["+ board[r][c] + "]  "+ ANSI_RESET+ "|");
          }
          System.out.print(" " + r);
          System.out.println("\n  |       |       |       |       |       |       |       |       |");
          System.out.println("   ---------------------------------------------------------------");
       }
       System.out.println("      A       B       C       D       E       F       G       H\n");
-    //System.out.println("   ================================");
-    for(Move object: legalMoves){
-          board[object.valid.row][object.valid.col] = blank;
-    }
    }
 
    public static void printLegalMoves(ArrayList<Move> legalMoves){
-     int index = 0;
+      int index = 0;
       for(Move object: legalMoves){
-            System.out.println("["+ index++ + "] " + object.toString());
+         System.out.println("["+ index++ + "] " + object.toString());
       }
    }
 
@@ -181,11 +184,11 @@ public class Othello{
       else{
          skipped = false;
          if(current.symbol == 'Z'){
-           System.out.println(ANSI_CYAN+"Pick a move!"+ANSI_RESET);
-        }
-       else{
-          System.out.println(ANSI_RED+"Pick a move!"+ANSI_RESET);
-       }
+            System.out.println(ANSI_CYAN+"Pick a move!"+ANSI_RESET);
+         }
+         else{
+            System.out.println(ANSI_RED+"Pick a move!"+ANSI_RESET);
+         }
          if(!current.ai){ //if player is human
          //need to check for valid input
 
@@ -196,13 +199,13 @@ public class Othello{
             System.out.println(random);
             chosen = legalMoves.get(random);
             */
-            chosen = minimax(board, enemy, current, 4, legalMoves);
+            chosen = minimax(board, current, enemy, 3, legalMoves);
          }
 
-         board[chosen.valid.row][chosen.valid.col] = current.symbol;
+         //board[chosen.valid.row][chosen.valid.col] = current.symbol;
       //flip valid pieces
 
-         flip(chosen, current, enemy, board);
+         board = flip(chosen, current, enemy, board);
          current.score++;
       }
    }
@@ -210,96 +213,104 @@ public class Othello{
    //minimax search
    public static Move minimax(char[][] b, Player current, Player enemy, int depth,
     ArrayList<Move> legalMoves) {
-     return minValue(b, current, enemy, depth, 0, legalMoves).move; //return position of best move
+      return minValue(b, current, enemy, depth, 0, legalMoves).move; //return position of best move
    }
    //returns heuristic value for the move in question
    public static Value maxValue(char[][] b, Player current, Player enemy, int depth, int currentDepth,
     ArrayList<Move> legalMoves){
 
-      if(legalMoves.size() == 0 || depth == currentDepth){
-        return new Value(heuristic(b, current, enemy, legalMoves));
+      if(legalMoves.size() == 0 || depth == currentDepth){ //increment only for min or max
+         return new Value(heuristic(b, current, enemy, legalMoves));
       }
 
-     int v = -1000;
-     Move chosen = null;
-     for(Move a: legalMoves){
+      int v = -1000;
+      Move chosen = null;
+      for(Move a: legalMoves){
        //for holding a copy of the array to make moves on
-       char[][] bCopy = new char[size][size];
+         char[][] bCopy = new char[size][size];
        //copy the array
-       for(int k = 0; k < size; k++){
-         System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
-       }
-
+         for(int k = 0; k < size; k++){
+            System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
+         }
+         ArrayList<Move> legal = new ArrayList<Move>();
       //find min value of result of picking legalMove a
-      flip(a, current, enemy, bCopy); //pick move a and update the board
-      validMove(current.symbol, enemy.symbol, bCopy, legalMoves); //find new legal moves based on move a
-      int min = minValue(bCopy, current, enemy, depth, ++currentDepth, legalMoves).val;
-      if(v < min){
-        v = min;
-        chosen = a;
+         bCopy = flip(a, enemy, current, bCopy); //pick move a and update the board
+         validMove(current.symbol, enemy.symbol, bCopy, legal); //find new legal moves for next player based on move a
+         System.out.println("max");
+         System.out.println(a);
+         printBoard(bCopy, legal);
+         int min = minValue(bCopy, current, enemy, depth, currentDepth, legal).val;
+         if(v < min){
+            v = min;
+            chosen = a;
+         }
       }
-     }
-     return new Value(chosen, v);
+      return new Value(chosen, v);
    }
 
    public static Value minValue(char[][] b, Player current, Player enemy, int depth, int currentDepth,
     ArrayList<Move> legalMoves){
 
       if(legalMoves.size() == 0 || depth == currentDepth){
-        return new Value(heuristic(b, current, enemy, legalMoves));
+         return new Value(heuristic(b, current, enemy, legalMoves));
       }
 
       int v = 1000;
       Move chosen = null;
       for(Move a: legalMoves){
         //for holding a copy of the array to make moves on
-        char[][] bCopy = new char[size][size];
+         char[][] bCopy = new char[size][size];
         //copy the array
-        for(int k = 0; k < size; k++){
-          System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
-        }
-
+         for(int k = 0; k < size; k++){
+            System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
+         }
+         ArrayList<Move> legal = new ArrayList<Move>();
        //find min value of result of picking legalMove a
-       flip(a, current, enemy, bCopy); //pick move a and update the board
-       validMove(current.symbol, enemy.symbol, bCopy, legalMoves); //find new legal moves based on move a
-       int max = maxValue(bCopy, current, enemy, depth, ++currentDepth,  legalMoves).val;
-       if(v > max){
-         v = max;
-         chosen = a;
-       }
+         bCopy = flip(a, current, enemy, bCopy); //pick move a and update the board
+         validMove(enemy.symbol, current.symbol, bCopy, legal); //find new legal moves for other player based on move a
+         System.out.println("min");
+         System.out.println(a);
+         printBoard(bCopy, legal);
+         int max = maxValue(bCopy, current, enemy, depth, currentDepth+1, legal).val;
+         if(v > max){
+            v = max;
+            chosen = a;
+         }
       }
       return new Value(chosen, v);
    }
    //evaluate position from current player's perspective
    public static int heuristic(char[][] board, Player current, Player enemy,
       ArrayList<Move> legalMoves){
-        int h = 0;
-        int outside = 2;
-        int corner = 4;
-        for(int n = 0; n < size; n++){
-          for(int m = 0; m < size; m++){
+      int h = 0;
+      int outside = 2;
+      int corner = 4;
+      for(int n = 0; n < size; n++){
+         for(int m = 0; m < size; m++){
             char c = board[n][m];
             if(board[n][m] == current.symbol)
               //corner move
-              if((n == 0 || n == size) && (m == 0 || m == size))
-                h += corner;
-              //outside move
-              else if(n == 0 || m == 0 || n == size || m == size)
-                h += outside;
-              //any other position
-              else
-                h++;
-          }
-        }
-        return h;
+               if((n == 0 || n == size) && (m == 0 || m == size))
+                  h += corner;
+               //outside move
+               else if(n == 0 || m == 0 || n == size || m == size)
+                  h += outside;
+               //any other position
+               else
+                  h++;
+         }
+      }
+      return h;
    }
 
    //move is the chosen move
    //updates board with chosen move and resulting flips
-   public static void flip(Move move, Player current, Player enemy, char[][] board){
+   public static char[][] flip(Move move, Player current, Player enemy, char[][] board){
       int row = move.valid.row;
       int col = move.valid.col;
       Position[] pos = move.locations;
+      //place the piece down
+      board[row][col] = current.symbol;
 
     //loop through flip positions
       for(int k = 0; k < move.index; k++){
@@ -384,6 +395,7 @@ public class Othello{
             }
          }
       }
+      return board;
    }
 
 //find all legal moves and add to the legalMoves ArrayList
@@ -562,8 +574,8 @@ public class Othello{
    //   location = p;
    // }
       public String toString(){
-        int c = (char)valid.col + 'A';
-        return "("+ (valid.row) + "," + (char)c + ")";
+         int c = (char)valid.col + 'A';
+         return "("+ (valid.row) + "," + (char)c + ")";
       }
    }
 //(x,y) coordinates of a move
@@ -587,14 +599,14 @@ public class Othello{
       }
    }
    public static class Value{
-     Move move;
-     int val;
-     public Value(Move m, int h){
-      move = m;
-      val = h;
-    }
-    public Value(int h){
-     val = h;
-   }
+      Move move;
+      int val;
+      public Value(Move m, int h){
+         move = m;
+         val = h;
+      }
+      public Value(int h){
+         val = h;
+      }
    }
 }
