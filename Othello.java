@@ -2,11 +2,11 @@ import java.io.*;
 import java.util.*;
 //import java.awt.*;
 
-public class Othello{
+public class Othello_copy{
    static int size = 8;
-   static char[][] board = new char[size][size];
-   static ArrayList<Move> legalMoves = new ArrayList<Move>();
-   static char blank = 0;
+   //static char[][] board = new char[size][size];
+   //static ArrayList<Move> legalMoves = new ArrayList<Move>();
+   static char blank = '0';
    static boolean skipped = false; //keep track if previous turn was skipped
    static boolean gameOver = false;
 
@@ -26,19 +26,13 @@ public class Othello{
 
    }
 
-   public static void loadBoard(String filename) throws FileNotFoundException{
+   public static void loadBoard(String filename, char[][] board) throws FileNotFoundException{
 
       Scanner sc = new Scanner(new File(filename));
 
       int r = 0;
       int c = 0;
       while(sc.hasNext()){
-        //  if(c > size-1){
-        //     r++;
-        //     c = 0;
-        //  }
-        //  board[r][c] = sc.next();
-        //  c++;
         String temp = sc.nextLine();
         for(int k = 0; k < size; k++){
           board[r][c] = temp.charAt(k);
@@ -49,6 +43,9 @@ public class Othello{
 
 
    public static void init(){
+      char[][] board = new char[8][8];
+      ArrayList<Move> legalMoves = new ArrayList<Move>();
+
       for(int r = 0; r < size; r++){
          for(int c = 0; c < size; c++){
             board[r][c] = blank;
@@ -84,25 +81,25 @@ public class Othello{
          player = new Player('Z',true);
          computer = new Player('#',true);
       }
-      //printBoard(player, computer);
 
       while(!gameOver){
       //while(true){
          if(p == 1){
-            play(player, computer, in);
+            play(player, computer, in, board, legalMoves);
             gameOver = stateCheck(player, computer);
 
-            play(computer, player, in);
+            play(computer, player, in, board, legalMoves);
             gameOver = stateCheck(player, computer);
          }
          else {
-            play(computer, player, in);
+            play(computer, player, in, board, legalMoves);
             gameOver = stateCheck(player, computer);
 
-            play(player, computer, in);
+            play(player, computer, in, board, legalMoves);
             gameOver = stateCheck(player, computer);
          }
       }
+      printBoard(board, legalMoves);
       System.out.println("Your score: " + player.score);
       System.out.println("Computer score: " + computer.score);
       if(player.score > computer.score)
@@ -123,13 +120,10 @@ public class Othello{
    }
 
 
-   public static void printBoard(){
-    //  char[][] temp = board;
-    //  int index = '0';
-    //  for(Move object: legalMoves){
-    //        temp[object.valid.row][object.valid.col] = (char)(index);
-    //        index++;
-    //  }
+   public static void printBoard(char[][] board, ArrayList<Move> legalMoves){
+     for(Move object: legalMoves){
+           board[object.valid.row][object.valid.col] = ' ';
+     }
 
       System.out.println("\n      A       B       C       D       E       F       G       H");
       System.out.println("   ===============================================================");
@@ -145,8 +139,8 @@ public class Othello{
                 System.out.print("   " +ANSI_CYAN+ board[r][c] +ANSI_RESET+ "   |");
                else if (current == '#')
                 System.out.print("   " +ANSI_RED+ board[r][c] +ANSI_RESET+ "   |");
-               //else
-                //System.out.print(ANSI_GREEN + "  ["+ board[r][c] + "]  "+ ANSI_RESET+ "|");
+               else
+                System.out.print(ANSI_GREEN + "  ["+ board[r][c] + "]  "+ ANSI_RESET+ "|");
          }
          System.out.print(" " + r);
          System.out.println("\n  |       |       |       |       |       |       |       |       |");
@@ -154,24 +148,28 @@ public class Othello{
       }
       System.out.println("      A       B       C       D       E       F       G       H\n");
     //System.out.println("   ================================");
+    for(Move object: legalMoves){
+          board[object.valid.row][object.valid.col] = blank;
+    }
    }
 
-   public static void printLegalMoves(){
+   public static void printLegalMoves(ArrayList<Move> legalMoves){
      int index = 0;
       for(Move object: legalMoves){
             System.out.println("["+ index++ + "] " + object.toString());
       }
    }
 
-   public static void play(Player current, Player enemy, Scanner in){
-      validMove(current.symbol, enemy.symbol); //fill arraylist with possible moves
+   public static void play(Player current, Player enemy, Scanner in,
+    char[][] board, ArrayList<Move> legalMoves){
+      validMove(current.symbol, enemy.symbol, board, legalMoves); //fill arraylist with possible moves
 
     //print board with legal moves
-      printBoard();
+      printBoard(board, legalMoves);
       System.out.println("Current Scores: ");
       System.out.println(current.symbol + ": " + current.score);
       System.out.println(enemy.symbol + ": " + enemy.score);
-      printLegalMoves();
+      printLegalMoves(legalMoves);
       Move chosen;
       if(legalMoves.size() == 0){ //if there are no valid moves
          if(skipped)
@@ -194,7 +192,7 @@ public class Othello{
             chosen = legalMoves.get(in.nextInt());
          }
          else{ //if computer
-            int random = (int)(Math.random()*(legalMoves.size()-1)) + 1; //not including zero
+            int random = (int)(Math.random()*(legalMoves.size()));
             System.out.println(random);
             chosen = legalMoves.get(random);
          }
@@ -202,12 +200,62 @@ public class Othello{
          board[chosen.valid.row][chosen.valid.col] = current.symbol;
       //flip valid pieces
 
-         flip(chosen, current, enemy);
+         flip(chosen, current, enemy, board);
          current.score++;
       }
-
    }
-   public static void flip(Move move, Player current, Player enemy){
+
+   //minimax search
+   public static int minimax(char[][] b) {
+     return Collections.max(minValue(b, current, depth, legalMoves)) //return position of best move
+   }
+   //returns heuristic value for the move in question
+   public static int maxValue(char[][] b, Player current, Player enemy, int depth,
+    ArrayList<Move> legalMoves, int branchValue){
+
+      if(legalMoves.size() == 0 || d == 4)){
+        return heuristic(b);
+      }
+
+      //for holding a copy of the array to make moves on
+      char[][] bCopy = char[size][size];
+      //copy the array
+      for(int k = 0; k < size; k++){
+        System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
+      }
+
+     int v = -1000;
+
+     for(a in legalMoves){
+      //find min value of result of picking legalMove a
+      flip(a, current, enemy, bCopy) //pick move a and update the board
+      validMove(current.symbol, enemy.symbol, bCopy, legalMoves); //find new legal moves based on move a
+      v = max(v, minValue(bCopy, current, ++depth, legalMoves, branchValue) );
+     }
+   }
+   public static int minValue(char[][] b, Player current, Player enemy, int depth,
+    ArrayList<Move> legalMoves, int branchValue){
+      if(legalMoves.size() == 0 || d == 4)){
+        return heuristic(b);
+      }
+
+      //for holding a copy of the array to make moves on
+      char[][] bCopy = char[size][size];
+      //copy the array
+      for(int k = 0; k < size; k++){
+        System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
+      }
+
+      int v = 1000;
+      //validMove(current.symbol, enemy.symbol, b, legalMoves);
+      for(a in legalMoves){
+       v = max(v, minValue(bCopy, current, ++depth, legalMoves, branchValue) );
+      }
+   }
+
+   //move is the chosen move
+   //updates board with chosen move and resulting flips
+   public static void flip(Move move, Player current, Player enemy, char[][] board){
       int row = move.valid.row;
       int col = move.valid.col;
       Position[] pos = move.locations;
@@ -298,8 +346,9 @@ public class Othello{
    }
 
 //find all legal moves and add to the legalMoves ArrayList
-   public static void validMove(int player, int enemy){
-   //loop through board
+   public static void validMove(int player, int enemy,
+      char[][] board, ArrayList<Move> legalMoves){
+      //loop through board
       legalMoves.clear(); //clear list
       //legalMoves.add(null); //skip turn option
       for(int r = 0; r < size; r++)
@@ -307,11 +356,12 @@ public class Othello{
             if(board[r][c] == blank)
             //determine if valid move
             //add furthest flip location(s)
-               validSearch(r, c, player, enemy);
+               validSearch(r, c, player, enemy, board, legalMoves);
    }
 //returns index of valid move extent. null for no valid move in that direction
 //not end of board and the next space contains an enemy
-   public static void validSearch(int r, int c, int player, int enemy){
+   public static void validSearch(int r, int c, int player, int enemy,
+        char[][] board, ArrayList<Move> legalMoves){
    //hold original move location for checking
       int orgR = r;
       int orgC = c;
