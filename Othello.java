@@ -192,9 +192,11 @@ public class Othello_copy{
             chosen = legalMoves.get(in.nextInt());
          }
          else{ //if computer
-            int random = (int)(Math.random()*(legalMoves.size()));
+            /*int random = (int)(Math.random()*(legalMoves.size()));
             System.out.println(random);
             chosen = legalMoves.get(random);
+            */
+            chosen = minimax(b);
          }
 
          board[chosen.valid.row][chosen.valid.col] = current.symbol;
@@ -206,51 +208,89 @@ public class Othello_copy{
    }
 
    //minimax search
-   public static int minimax(char[][] b) {
+   public static Move minimax(char[][] b) {
      return Collections.max(minValue(b, current, depth, legalMoves)) //return position of best move
    }
    //returns heuristic value for the move in question
-   public static int maxValue(char[][] b, Player current, Player enemy, int depth,
+   public static Value maxValue(char[][] b, Player current, Player enemy, int depth,
     ArrayList<Move> legalMoves, int branchValue){
 
       if(legalMoves.size() == 0 || d == 4)){
-        return heuristic(b);
-      }
-
-      //for holding a copy of the array to make moves on
-      char[][] bCopy = char[size][size];
-      //copy the array
-      for(int k = 0; k < size; k++){
-        System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
+        return new Value(heuristic(b, current, enemy, legalMoves));
       }
 
      int v = -1000;
+     Move chosen;
+     for(Move a: legalMoves){
+       //for holding a copy of the array to make moves on
+       char[][] bCopy = char[size][size];
+       //copy the array
+       for(int k = 0; k < size; k++){
+         System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
+       }
 
-     for(a in legalMoves){
       //find min value of result of picking legalMove a
       flip(a, current, enemy, bCopy) //pick move a and update the board
       validMove(current.symbol, enemy.symbol, bCopy, legalMoves); //find new legal moves based on move a
-      v = max(v, minValue(bCopy, current, ++depth, legalMoves, branchValue) );
-     }
-   }
-   public static int minValue(char[][] b, Player current, Player enemy, int depth,
-    ArrayList<Move> legalMoves, int branchValue){
-      if(legalMoves.size() == 0 || d == 4)){
-        return heuristic(b);
+      int min = minValue(bCopy, current, ++depth, legalMoves, branchValue))
+      if(v < min){
+        v = min;
+        chosen = a;
       }
+     }
+     return new Value(chosen, heuristic);
+   }
+   
+   public static Value minValue(char[][] b, Player current, Player enemy, int depth,
+    ArrayList<Move> legalMoves, int branchValue){
 
-      //for holding a copy of the array to make moves on
-      char[][] bCopy = char[size][size];
-      //copy the array
-      for(int k = 0; k < size; k++){
-        System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
+      if(legalMoves.size() == 0 || d == 4)){
+        return new Value(heuristic(b, current, enemy, legalMoves));
       }
 
       int v = 1000;
-      //validMove(current.symbol, enemy.symbol, b, legalMoves);
-      for(a in legalMoves){
-       v = max(v, minValue(bCopy, current, ++depth, legalMoves, branchValue) );
+      Move chosen;
+      for(Move a: legalMoves){
+        //for holding a copy of the array to make moves on
+        char[][] bCopy = char[size][size];
+        //copy the array
+        for(int k = 0; k < size; k++){
+          System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
+        }
+
+       //find min value of result of picking legalMove a
+       flip(a, current, enemy, bCopy) //pick move a and update the board
+       validMove(current.symbol, enemy.symbol, bCopy, legalMoves); //find new legal moves based on move a
+       int max = maxValue(bCopy, current, ++depth, legalMoves, branchValue, a))
+       if(v > max){
+         v = max;
+         chosen = a;
+       }
       }
+      return new Value(chosen, heuristic);
+   }
+   //evaluate position from current player's perspective
+   public static int heuristic(char[][] board, Player current, Player enemy,
+      ArrayList<Move> legalMoves){
+        int h = 0;
+        int outside = 2;
+        int corner = 4;
+        for(int n = 0; n < size; n++){
+          for(int m = 0; m < size; m++){
+            char c = board[n][m];
+            if(board[n][m] == current.symbol)
+              //corner move
+              if((n == 0 || n == size) && (m == 0 || m == size))
+                h += corner;
+              //outside move
+              else if(n == 0 || m == 0 || n == size || m == size)
+                h += outside;
+              //any other position
+              else
+                h++;
+          }
+        }
+        return h;
    }
 
    //move is the chosen move
@@ -544,5 +584,13 @@ public class Othello_copy{
          symbol = s;
          ai = comp;
       }
+   }
+   public static class Value{
+     Move move;
+     int heuristic;
+     public Value(Move m, int h){
+      move = m;
+      heuristic = h;
+    }
    }
 }
