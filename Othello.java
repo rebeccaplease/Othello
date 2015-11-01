@@ -196,13 +196,13 @@ public class Othello{
          }
          else{ //if computer
 
-            if(current.symbol == 'Z')
-              chosen = minimax(board, current, enemy, System.nanoTime(), legalMoves);
-            else{
-              int random = (int)(Math.random()*(legalMoves.size()));
-              System.out.println(random);
-              chosen = legalMoves.get(random);
-            }
+            // if(current.symbol == 'Z')
+               chosen = minimax(board, current, enemy, System.nanoTime(), legalMoves);
+            // else{
+            //    int random = (int)(Math.random()*(legalMoves.size()));
+            //    System.out.println(random);
+            //    chosen = legalMoves.get(random);
+            // }
          }
 
          //board[chosen.valid.row][chosen.valid.col] = current.symbol;
@@ -219,32 +219,32 @@ public class Othello{
    //but max wants to return the maximum of the minimum values. (maxValue)
    public static Move minimax(char[][] b, Player min, Player max, long startTime,
    ArrayList<Move> legalMoves) {
-     if(legalMoves.size() == 1) //if there is only one possible move
-      return legalMoves.get(0);
+      if(legalMoves.size() == 1) //if there is only one possible move
+         return legalMoves.get(0);
       Value prev = null;
       Value best = null;
       for(int d = 2; d < 20; d++){
-        best = minValue(b, min, max, d, 1, legalMoves, startTime);
-        if(best.cutoff){
-          return prev.move;
-        }
+         best = minValue(b, min, max, d, 1, legalMoves, startTime, -1000, 1000);
+         if(best.cutoff){
+            return prev.move;
+         }
 
-        if(best.randomMove){ //if all moves are equally likely, stop there
-          return best.move;
-        }
-        System.out.println("depth: "+d);
-        System.out.println("time: " + (System.nanoTime()-startTime)/1000000000.0 + "\n");
-        prev = best;
+         if(best.randomMove){ //if all moves are equally likely, stop there
+            return best.move;
+         }
+         System.out.println("depth: "+d);
+         System.out.println("time: " + (System.nanoTime()-startTime)/1000000000.0 + "\n");
+         prev = best;
 
       }
       return best.move; //return position of best move
    }
    //returns heuristic value for the move in question
    public static Value maxValue(char[][] b, Player min, Player max, int depth, int currentDepth,
-    ArrayList<Move> legalMoves, long startTime){
+    ArrayList<Move> legalMoves, long startTime, int alpha, int beta){
       //if 4.9 seconds have elapsed
       if(System.nanoTime() - startTime > 4.9*1000000000){
-        return new Value(true);
+         return new Value(true);
       }
 
       if(legalMoves.size() == 0 || depth == currentDepth){
@@ -272,9 +272,9 @@ public class Othello{
         //  printBoard(bCopy, legal);
         //  System.out.println("Current Depth: "+ currentDepth);
 
-         Value returned = minValue(bCopy, min, max, depth, currentDepth+1, legal, startTime);
+         Value returned = minValue(bCopy, min, max, depth, currentDepth+1, legal, startTime, alpha, beta);
          if(returned.cutoff){
-           return returned;
+            return returned;
          }
          int low = returned.val;
          // System.out.println("Heuristic: "+ low+ " Depth: " + currentDepth);
@@ -283,33 +283,41 @@ public class Othello{
         //     v = low;
         //     chosen = a;
         //  }
-        if(v < low){
-         equal.clear();
-         v = low;
+         if(v < low){
+            equal.clear();
+            v = low;
+            if(v >= beta){
+               return new Value(v);
+            }
+
+
          //chosen = a;
-         equal.add(new Value(a, v));
-      }
-      else if(v == low){
-        equal.add(new Value(a, low));
-      }
+            equal.add(new Value(a, v));
+         }
+         else if(v == low){
+            equal.add(new Value(a, low));
+         }
+         if(v > alpha){
+            alpha = v;
+         }
       }
       //if all results have the same heuristic, pick one randomly
       if(equal.size() > 1 ){
-        int random = (int)(Math.random()*(equal.size()));
-        Value best = equal.get(random);
-        if(equal.size() == legalMoves.size())
-          best.randomMove = true;
-        return best;
+         int random = (int)(Math.random()*(equal.size()));
+         Value best = equal.get(random);
+         if(equal.size() == legalMoves.size())
+            best.randomMove = true;
+         return best;
       }
       return equal.get(0);
       //return new Value(chosen, v);
    }
 
    public static Value minValue(char[][] b, Player min, Player max, int depth, int currentDepth,
-    ArrayList<Move> legalMoves, long startTime){
+    ArrayList<Move> legalMoves, long startTime, int alpha, int beta){
       //if 4.9 seconds have elapsed
       if(System.nanoTime() - startTime > 4.9*1000000000){
-        return new Value(true);
+         return new Value(true);
       }
 
       if(legalMoves.size() == 0 || depth == currentDepth){
@@ -338,29 +346,37 @@ public class Othello{
         //  System.out.println("Current Depth: "+ currentDepth);
 
          //return minimum of maximum value
-         Value returned = maxValue(bCopy, min, max, depth, currentDepth+1, legal, startTime);
+         Value returned = maxValue(bCopy, min, max, depth, currentDepth+1, legal, startTime, alpha, beta);
          if(returned.cutoff){
-           return returned;
+            return returned;
          }
          int high = returned.val;
          //System.out.println("Heuristic: "+ high+ " Depth: " + currentDepth);
          if(v > high){
             equal.clear();
             v = high;
+            if(v <= alpha){
+               return new Value(v);
+            }
+
             //chosen = a;
             equal.add(new Value(a, v));
          }
          else if(v == high){
-           equal.add(new Value(a, high));
+            equal.add(new Value(a, high));
+         }
+
+         if(v < beta){
+            beta = v;
          }
       }
       //if all results have the same heuristic, pick one randomly
       if(equal.size() > 1 ){
-        int random = (int)(Math.random()*(equal.size()));
-        Value best = equal.get(random);
-        if(equal.size() == legalMoves.size())
-          best.randomMove = true;
-        return best;
+         int random = (int)(Math.random()*(equal.size()));
+         Value best = equal.get(random);
+         if(equal.size() == legalMoves.size())
+            best.randomMove = true;
+         return best;
       }
       return equal.get(0);
    }
@@ -377,49 +393,49 @@ public class Othello{
               //corner move
                if((n == 0 || n == size-1) && (m == 0 || m == size-1)){
                   h += corner;
-                }
+               }
                //outside move
                else if(n == 0 || m == 0 || n == size-1 || m == size-1){
                   h += outside;
-                }
+               }
                //any other position
                else{
                   h++;
-                }
-              }
+               }
+            }
 
-         if(c == max.symbol){
-           //corner move
-            if((n == 0 || n == size-1) && (m == 0 || m == size-1)){
-               h -= corner;
-             }
-            //outside move
-            else if(n == 0 || m == 0 || n == size-1 || m == size-1){
-               h -= outside;
-             }
-            //any other position
-            else{
-               h--;
-             }
-           }
+            if(c == max.symbol){
+            //corner move
+               if((n == 0 || n == size-1) && (m == 0 || m == size-1)){
+                  h -= corner;
+               }
+               //outside move
+               else if(n == 0 || m == 0 || n == size-1 || m == size-1){
+                  h -= outside;
+               }
+               //any other position
+               else{
+                  h--;
+               }
+            }
          }
-         }
+      }
       return h-depth;
    }
    //calculate score
    public static void scoreUpdate(char[][] board, Player a, Player b){
-     a.score = 0;
-     b.score = 0;
-       for(int i = 0; i < size; i++){
+      a.score = 0;
+      b.score = 0;
+      for(int i = 0; i < size; i++){
          for(int j = 0; j < size; j++){
-           if(board[i][j] == a.symbol){
-             a.score++;
-           }
-           else if(board[i][j] == b.symbol){
-             b.score++;
-           }
+            if(board[i][j] == a.symbol){
+               a.score++;
+            }
+            else if(board[i][j] == b.symbol){
+               b.score++;
+            }
          }
-     }
+      }
    }
 
    //move is the chosen move
@@ -722,7 +738,7 @@ public class Othello{
          val = h;
       }
       public Value(boolean c){
-        cutoff = c;
+         cutoff = c;
       }
    }
 }
