@@ -211,16 +211,18 @@ public class Othello{
    }
 
    //minimax search
-   public static Move minimax(char[][] b, Player current, Player enemy, int depth,
+   //min wants to return the minimum of the maximum values. (minValue)
+   //but max wants to return the maximum of the minimum values. (maxValue)
+   public static Move minimax(char[][] b, Player min, Player max, int depth,
     ArrayList<Move> legalMoves) {
-      return minValue(b, current, enemy, depth, 0, legalMoves).move; //return position of best move
+      return minValue(b, min, max, depth, 0, legalMoves).move; //return position of best move
    }
    //returns heuristic value for the move in question
-   public static Value maxValue(char[][] b, Player current, Player enemy, int depth, int currentDepth,
+   public static Value maxValue(char[][] b, Player min, Player max, int depth, int currentDepth,
     ArrayList<Move> legalMoves){
 
       if(legalMoves.size() == 0 || depth == currentDepth){ //increment only for min or max
-         return new Value(heuristic(b, current, enemy, legalMoves));
+         return new Value(heuristic(b, max, min, legalMoves));
       }
 
       int v = -1000;
@@ -233,26 +235,29 @@ public class Othello{
             System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
          }
          ArrayList<Move> legal = new ArrayList<Move>();
-      //find min value of result of picking legalMove a
-         bCopy = flip(a, enemy, current, bCopy); //pick move a and update the board
-         validMove(current.symbol, enemy.symbol, bCopy, legal); //find new legal moves for next player based on move a
-         System.out.println("max");
+         //find min value of result of picking legalMove a
+         bCopy = flip(a, max, min, bCopy); //pick move a and update the board
+         validMove(min.symbol, max.symbol, bCopy, legal); //find new legal moves for next player based on move a
+
+         /*System.out.println("max");
          System.out.println(a);
-         printBoard(bCopy, legal);
-         int min = minValue(bCopy, current, enemy, depth, currentDepth, legal).val;
-         if(v < min){
-            v = min;
+         printBoard(bCopy, legal);*/
+
+         int low = minValue(bCopy, min, max, depth, currentDepth+1, legal).val;
+         //return maximum of minimum values
+         if(v < low){
+            v = low;
             chosen = a;
          }
       }
       return new Value(chosen, v);
    }
 
-   public static Value minValue(char[][] b, Player current, Player enemy, int depth, int currentDepth,
+   public static Value minValue(char[][] b, Player min, Player max, int depth, int currentDepth,
     ArrayList<Move> legalMoves){
 
       if(legalMoves.size() == 0 || depth == currentDepth){
-         return new Value(heuristic(b, current, enemy, legalMoves));
+         return new Value(heuristic(b, min, max, legalMoves));
       }
 
       int v = 1000;
@@ -266,41 +271,44 @@ public class Othello{
          }
          ArrayList<Move> legal = new ArrayList<Move>();
        //find min value of result of picking legalMove a
-         bCopy = flip(a, current, enemy, bCopy); //pick move a and update the board
-         validMove(enemy.symbol, current.symbol, bCopy, legal); //find new legal moves for other player based on move a
-         System.out.println("min");
+         bCopy = flip(a, min, max, bCopy); //pick move a and update the board
+         validMove(max.symbol, min.symbol, bCopy, legal); //find new legal moves for other player based on move a
+
+         /*System.out.println("min");
          System.out.println(a);
-         printBoard(bCopy, legal);
-         int max = maxValue(bCopy, current, enemy, depth, currentDepth+1, legal).val;
-         if(v > max){
-            v = max;
+         printBoard(bCopy, legal);*/
+         //return minimum of maximum value
+         int high = maxValue(bCopy, min, max, depth, currentDepth+1, legal).val;
+         if(v > high){
+            v = high;
             chosen = a;
          }
       }
       return new Value(chosen, v);
    }
    //evaluate position from current player's perspective
-   public static int heuristic(char[][] board, Player current, Player enemy,
+   public static int heuristic(char[][] board, Player min, Player max,
       ArrayList<Move> legalMoves){
-      int h = 0;
-      int outside = 2;
-      int corner = 4;
+      int hMin = 0;
+      int outside = 10;
+      int corner = 20;
       for(int n = 0; n < size; n++){
          for(int m = 0; m < size; m++){
             char c = board[n][m];
-            if(board[n][m] == current.symbol)
+            if(board[n][m] == min.symbol)
               //corner move
-               if((n == 0 || n == size) && (m == 0 || m == size))
-                  h += corner;
+               if((n == 0 || n == size-1) && (m == 0 || m == size-1))
+                  hMin += corner;
                //outside move
-               else if(n == 0 || m == 0 || n == size || m == size)
-                  h += outside;
+               else if(n == 0 || m == 0 || n == size-1 || m == size-1)
+                  hMin += outside;
                //any other position
                else
-                  h++;
+                  hMin++;
+
          }
       }
-      return h;
+      return hMin;
    }
 
    //move is the chosen move
