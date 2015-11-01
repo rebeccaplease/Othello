@@ -219,6 +219,8 @@ public class Othello{
    //but max wants to return the maximum of the minimum values. (maxValue)
    public static Move minimax(char[][] b, Player min, Player max, long startTime,
    ArrayList<Move> legalMoves) {
+     if(legalMoves.size() == 1) //if there is only one possible move
+      return legalMoves.get(0);
       Value prev = null;
       Value best = null;
       for(int d = 2; d < 20; d++){
