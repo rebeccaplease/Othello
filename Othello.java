@@ -199,27 +199,43 @@ public class Othello{
             System.out.println(random);
             chosen = legalMoves.get(random);
             */
-            chosen = minimax(board, current, enemy, 3, legalMoves);
+            chosen = minimax(board, current, enemy, System.nanoTime(), legalMoves);
          }
 
          //board[chosen.valid.row][chosen.valid.col] = current.symbol;
-      //flip valid pieces
+         //flip valid pieces
 
          board = flip(chosen, current, enemy, board);
          current.score++;
+         scoreUpdate(board, current, enemy);
       }
    }
 
    //minimax search
    //min wants to return the minimum of the maximum values. (minValue)
    //but max wants to return the maximum of the minimum values. (maxValue)
-   public static Move minimax(char[][] b, Player min, Player max, int depth,
-    ArrayList<Move> legalMoves) {
-      return minValue(b, min, max, depth, 0, legalMoves).move; //return position of best move
+   public static Move minimax(char[][] b, Player min, Player max, long startTime,
+   ArrayList<Move> legalMoves) {
+      Value prev = null;
+      Value best = null;
+      for(int d = 0; d < 20; d++){
+        best = minValue(b, min, max, d, 0, legalMoves, startTime);
+        System.out.println("depth: "+d);
+        System.out.println("time: " + (System.nanoTime()-startTime) + "\n");
+        if(best.cutoff){
+          return prev.move;
+        }
+        prev = best;
+      }
+      return best.move; //return position of best move
    }
    //returns heuristic value for the move in question
    public static Value maxValue(char[][] b, Player min, Player max, int depth, int currentDepth,
-    ArrayList<Move> legalMoves){
+    ArrayList<Move> legalMoves, long startTime){
+      //if 4.5 seconds have elapsed
+      if(System.nanoTime() - startTime > 4.5*1000000000){
+        return new Value(true);
+      }
 
       if(legalMoves.size() == 0 || depth == currentDepth){ //increment only for min or max
          return new Value(heuristic(b, max, min, legalMoves));
@@ -242,8 +258,11 @@ public class Othello{
          /*System.out.println("max");
          System.out.println(a);
          printBoard(bCopy, legal);*/
-
-         int low = minValue(bCopy, min, max, depth, currentDepth+1, legal).val;
+         Value returned = minValue(bCopy, min, max, depth, currentDepth+1, legal, startTime);
+         if(returned.cutoff){
+           return returned;
+         }
+         int low = returned.val;
          //return maximum of minimum values
          if(v < low){
             v = low;
@@ -254,7 +273,11 @@ public class Othello{
    }
 
    public static Value minValue(char[][] b, Player min, Player max, int depth, int currentDepth,
-    ArrayList<Move> legalMoves){
+    ArrayList<Move> legalMoves, long startTime){
+      //if 4.5 seconds have elapsed
+      if(System.nanoTime() - startTime > 4.5*1000000000){
+        return new Value(true);
+      }
 
       if(legalMoves.size() == 0 || depth == currentDepth){
          return new Value(heuristic(b, min, max, legalMoves));
@@ -278,7 +301,11 @@ public class Othello{
          System.out.println(a);
          printBoard(bCopy, legal);*/
          //return minimum of maximum value
-         int high = maxValue(bCopy, min, max, depth, currentDepth+1, legal).val;
+         Value returned = maxValue(bCopy, min, max, depth, currentDepth+1, legal, startTime);
+         if(returned.cutoff){
+           return returned;
+         }
+         int high = returned.val;
          if(v > high){
             v = high;
             chosen = a;
@@ -305,10 +332,24 @@ public class Othello{
                //any other position
                else
                   hMin++;
-
          }
       }
       return hMin;
+   }
+   //calculate score
+   public static void scoreUpdate(char[][] board, Player a, Player b){
+     a.score = 0;
+     b.score = 0;
+       for(int i = 0; i < size; i++){
+         for(int j = 0; j < size; j++){
+           if(board[i][j] == a.symbol){
+             a.score++;
+           }
+           else if(board[i][j] == b.symbol){
+             b.score++;
+           }
+         }
+     }
    }
 
    //move is the chosen move
@@ -331,16 +372,14 @@ public class Othello{
             if(p.row > r){
                while(r != p.row){
                   board[++r][c] = current.symbol;
-                  current.score++;
-                  enemy.score--;
+
                }
             }
             //up
             else{
                while(r != p.row){
                   board[--r][c] = current.symbol;
-                  current.score++;
-                  enemy.score--;
+
                }
             }
          }
@@ -351,16 +390,14 @@ public class Othello{
             if(p.col > c){
                while(c != p.col){
                   board[r][++c] = current.symbol;
-                  current.score++;
-                  enemy.score--;
+
                }
             }
             //left
             else{
                while(c != p.col){
                   board[r][--c] = current.symbol;
-                  current.score++;
-                  enemy.score--;
+
                }
             }
          }
@@ -370,16 +407,14 @@ public class Othello{
             if(p.row < r){
                while(r != p.row && c != p.col){
                   board[--r][--c] = current.symbol;
-                  current.score++;
-                  enemy.score--;
+
                }
             }
             //leftdown
             else{
                while(r != p.row && c != p.col){
                   board[++r][--c] = current.symbol;
-                  current.score++;
-                  enemy.score--;
+
                }
             }
          }
@@ -389,16 +424,14 @@ public class Othello{
             if(p.row < r){
                while(r != p.row && c != p.col){
                   board[--r][++c] = current.symbol;
-                  current.score++;
-                  enemy.score--;
+
                }
             }
             //rightdown
             else{
                while(r != p.row && c != p.col){
                   board[++r][++col] = current.symbol;
-                  current.score++;
-                  enemy.score--;
+
                }
             }
          }
@@ -609,12 +642,16 @@ public class Othello{
    public static class Value{
       Move move;
       int val;
+      boolean cutoff = false;
       public Value(Move m, int h){
          move = m;
          val = h;
       }
       public Value(int h){
          val = h;
+      }
+      public Value(boolean c){
+        cutoff = c;
       }
    }
 }
