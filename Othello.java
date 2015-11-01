@@ -195,11 +195,14 @@ public class Othello{
             chosen = legalMoves.get(in.nextInt());
          }
          else{ //if computer
-            /*int random = (int)(Math.random()*(legalMoves.size()));
-            System.out.println(random);
-            chosen = legalMoves.get(random);
-            */
-            chosen = minimax(board, current, enemy, System.nanoTime(), legalMoves);
+
+            if(current.symbol == 'Z')
+              chosen = minimax(board, current, enemy, System.nanoTime(), legalMoves);
+            else{
+              int random = (int)(Math.random()*(legalMoves.size()));
+              System.out.println(random);
+              chosen = legalMoves.get(random);
+            }
          }
 
          //board[chosen.valid.row][chosen.valid.col] = current.symbol;
@@ -218,31 +221,37 @@ public class Othello{
    ArrayList<Move> legalMoves) {
       Value prev = null;
       Value best = null;
-      for(int d = 0; d < 20; d++){
-        best = minValue(b, min, max, d, 0, legalMoves, startTime);
-        System.out.println("depth: "+d);
-        System.out.println("time: " + (System.nanoTime()-startTime) + "\n");
+      for(int d = 2; d < 20; d++){
+        best = minValue(b, min, max, d, 1, legalMoves, startTime);
         if(best.cutoff){
           return prev.move;
         }
+
+        if(best.randomMove){ //if all moves are equally likely, stop there
+          return best.move;
+        }
+        System.out.println("depth: "+d);
+        System.out.println("time: " + (System.nanoTime()-startTime)/1000000000.0 + "\n");
         prev = best;
+
       }
       return best.move; //return position of best move
    }
    //returns heuristic value for the move in question
    public static Value maxValue(char[][] b, Player min, Player max, int depth, int currentDepth,
     ArrayList<Move> legalMoves, long startTime){
-      //if 4.5 seconds have elapsed
-      if(System.nanoTime() - startTime > 4.5*1000000000){
+      //if 4.9 seconds have elapsed
+      if(System.nanoTime() - startTime > 4.9*1000000000){
         return new Value(true);
       }
 
-      if(legalMoves.size() == 0 || depth == currentDepth){ //increment only for min or max
-         return new Value(heuristic(b, max, min, legalMoves));
+      if(legalMoves.size() == 0 || depth == currentDepth){
+         return new Value(heuristic(b, max, min, legalMoves, currentDepth));
       }
 
       int v = -1000;
-      Move chosen = null;
+      ArrayList<Value> equal = new ArrayList<Value>();
+      //Move chosen = null;
       for(Move a: legalMoves){
        //for holding a copy of the array to make moves on
          char[][] bCopy = new char[size][size];
@@ -251,40 +260,63 @@ public class Othello{
             System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
          }
          ArrayList<Move> legal = new ArrayList<Move>();
+
          //find min value of result of picking legalMove a
          bCopy = flip(a, max, min, bCopy); //pick move a and update the board
          validMove(min.symbol, max.symbol, bCopy, legal); //find new legal moves for next player based on move a
 
-         /*System.out.println("max");
-         System.out.println(a);
-         printBoard(bCopy, legal);*/
+        //  System.out.println("max");
+        //  System.out.println(a);
+        //  printBoard(bCopy, legal);
+        //  System.out.println("Current Depth: "+ currentDepth);
+
          Value returned = minValue(bCopy, min, max, depth, currentDepth+1, legal, startTime);
          if(returned.cutoff){
            return returned;
          }
          int low = returned.val;
+         // System.out.println("Heuristic: "+ low+ " Depth: " + currentDepth);
          //return maximum of minimum values
-         if(v < low){
-            v = low;
-            chosen = a;
-         }
+        //  if(v < low){
+        //     v = low;
+        //     chosen = a;
+        //  }
+        if(v < low){
+         equal.clear();
+         v = low;
+         //chosen = a;
+         equal.add(new Value(a, v));
       }
-      return new Value(chosen, v);
+      else if(v == low){
+        equal.add(new Value(a, low));
+      }
+      }
+      //if all results have the same heuristic, pick one randomly
+      if(equal.size() > 1 ){
+        int random = (int)(Math.random()*(equal.size()));
+        Value best = equal.get(random);
+        if(equal.size() == legalMoves.size())
+          best.randomMove = true;
+        return best;
+      }
+      return equal.get(0);
+      //return new Value(chosen, v);
    }
 
    public static Value minValue(char[][] b, Player min, Player max, int depth, int currentDepth,
     ArrayList<Move> legalMoves, long startTime){
-      //if 4.5 seconds have elapsed
-      if(System.nanoTime() - startTime > 4.5*1000000000){
+      //if 4.9 seconds have elapsed
+      if(System.nanoTime() - startTime > 4.9*1000000000){
         return new Value(true);
       }
 
       if(legalMoves.size() == 0 || depth == currentDepth){
-         return new Value(heuristic(b, min, max, legalMoves));
+         return new Value(heuristic(b, min, max, legalMoves, currentDepth));
       }
-
+      //store heuristic value
       int v = 1000;
-      Move chosen = null;
+      ArrayList<Value> equal = new ArrayList<Value>();
+      //Move chosen = null;
       for(Move a: legalMoves){
         //for holding a copy of the array to make moves on
          char[][] bCopy = new char[size][size];
@@ -293,48 +325,84 @@ public class Othello{
             System.arraycopy( b[k], 0, bCopy[k], 0, b[k].length );
          }
          ArrayList<Move> legal = new ArrayList<Move>();
+
        //find min value of result of picking legalMove a
          bCopy = flip(a, min, max, bCopy); //pick move a and update the board
          validMove(max.symbol, min.symbol, bCopy, legal); //find new legal moves for other player based on move a
 
-         /*System.out.println("min");
-         System.out.println(a);
-         printBoard(bCopy, legal);*/
+        //  System.out.println("min");
+        //  System.out.println(a);
+        //  printBoard(bCopy, legal);
+        //  System.out.println("Current Depth: "+ currentDepth);
+
          //return minimum of maximum value
          Value returned = maxValue(bCopy, min, max, depth, currentDepth+1, legal, startTime);
          if(returned.cutoff){
            return returned;
          }
          int high = returned.val;
+         //System.out.println("Heuristic: "+ high+ " Depth: " + currentDepth);
          if(v > high){
+            equal.clear();
             v = high;
-            chosen = a;
+            //chosen = a;
+            equal.add(new Value(a, v));
+         }
+         else if(v == high){
+           equal.add(new Value(a, high));
          }
       }
-      return new Value(chosen, v);
+      //if all results have the same heuristic, pick one randomly
+      if(equal.size() > 1 ){
+        int random = (int)(Math.random()*(equal.size()));
+        Value best = equal.get(random);
+        if(equal.size() == legalMoves.size())
+          best.randomMove = true;
+        return best;
+      }
+      return equal.get(0);
    }
-   //evaluate position from current player's perspective
+   //evaluate position from min's perspective
    public static int heuristic(char[][] board, Player min, Player max,
-      ArrayList<Move> legalMoves){
-      int hMin = 0;
-      int outside = 10;
+      ArrayList<Move> legalMoves, int depth){
+      int h = 0;
+      int outside = 5;
       int corner = 20;
       for(int n = 0; n < size; n++){
          for(int m = 0; m < size; m++){
             char c = board[n][m];
-            if(board[n][m] == min.symbol)
+            if(c == min.symbol){
               //corner move
-               if((n == 0 || n == size-1) && (m == 0 || m == size-1))
-                  hMin += corner;
+               if((n == 0 || n == size-1) && (m == 0 || m == size-1)){
+                  h += corner;
+                }
                //outside move
-               else if(n == 0 || m == 0 || n == size-1 || m == size-1)
-                  hMin += outside;
+               else if(n == 0 || m == 0 || n == size-1 || m == size-1){
+                  h += outside;
+                }
                //any other position
-               else
-                  hMin++;
+               else{
+                  h++;
+                }
+              }
+
+         if(c == max.symbol){
+           //corner move
+            if((n == 0 || n == size-1) && (m == 0 || m == size-1)){
+               h -= corner;
+             }
+            //outside move
+            else if(n == 0 || m == 0 || n == size-1 || m == size-1){
+               h -= outside;
+             }
+            //any other position
+            else{
+               h--;
+             }
+           }
          }
-      }
-      return hMin;
+         }
+      return h-depth;
    }
    //calculate score
    public static void scoreUpdate(char[][] board, Player a, Player b){
@@ -643,6 +711,7 @@ public class Othello{
       Move move;
       int val;
       boolean cutoff = false;
+      boolean randomMove = false;
       public Value(Move m, int h){
          move = m;
          val = h;
