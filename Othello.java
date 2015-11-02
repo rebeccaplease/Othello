@@ -9,6 +9,7 @@ public class Othello{
    static char blank = '0';   //blank space
    static boolean skipped = false; //keep track if previous turn was skipped
    static boolean gameOver = false; //True if two turns are skipped in a row
+   static long TIME_LIMIT = 4900000000L; //Time limit for search in nanoseconds
 
    //Color constants for printing
    public static final String ANSI_RESET = "\u001B[0m";
@@ -25,52 +26,98 @@ public class Othello{
 // Setup
 //================================================================================
 
+/**
+ * Initialize board. Use init for new games and loadBoard for loading in a board.
+ */
    public static void main(String[] args){
-      init();
+     char[][] board = new char[8][8];
+     init(board);
+     //loadBoard("test.txt", board, '1', '2');
+     start(board);
    }
 
-   public static void init(){
-      char[][] board = new char[8][8];
-      ArrayList<Move> legalMoves = new ArrayList<Move>();
-
-      for(int r = 0; r < SIZE; r++){
-         for(int c = 0; c < SIZE; c++){
+/**
+* Fill board with blanks and starting positions.
+*
+* @param   board      Board to load in.
+*/
+   public static void init(char[][] board){
+      for(int r = 0; r < SIZE; r++)
+         for(int c = 0; c < SIZE; c++)
             board[r][c] = blank;
-         }
-      }
 
       board[3][3] = '#';
       board[3][4] = 'Z';
       board[4][3] = 'Z';
       board[4][4] = '#';
+    }
 
+/**
+ * Option for loading a preset 8x8 board in. Must specify what two chars are used
+ * for move pieces to translate them to 'Z' and '#'. Zeros are used to
+ * indicate empty spaces.
+ *
+ * @param   filename   .txt file format.
+ * @param   board      Board to load in
+ * @param   one        One move piece character.
+ * @param   two        Other move piece character.
+ */
+     public static void loadBoard(String filename, char[][] board, char one, char two)
+        throws FileNotFoundException{
+        Scanner sc = new Scanner(new File(filename));
+
+        int r = 0;
+        int c = 0;
+        while(sc.hasNext()){
+           String temp = sc.nextLine();
+           for(int k = 0; k < SIZE; k++){
+              char add = temp.charAt(k);
+              if(add == one)
+                 board[r][c] = 'Z';
+              else if(add == two)
+                 board[r][c] = '#';
+              else
+                 board[r][c] = add;
+           }
+        }
+        sc.close();
+     }
+ /**
+  * Start gameplay and continue until game is over.
+  * 1 for going first
+  *
+  * @param   board     Game board.
+  */
+    public static void start(char[][] board){
+      ArrayList<Move> legalMoves = new ArrayList<Move>();
 
       Scanner in = new Scanner(System.in);
-      System.out.println("Do you want to go first[1] or second[2]? [3] for computer v. computer");//need to catch invalid inputs
+
+      System.out.println("Do you want to go first[1] or second[2]? [3] for PvP. [3] for computer v. computer");//need to catch invalid inputs
       int p = in.nextInt();
-      char comp;
+
       Player player;
       Player computer;
 
       if(p == 1){
-         //comp = Z;
          player = new Player('#',false);
          computer = new Player('Z',true);
       }
       else if (p == 2){
-         comp = 1;
          player = new Player('Z',false);
          computer = new Player('#',true);
       }
-      else{ //computer v computer
-         comp = 1;
+      else if (p == 3){
+         player = new Player('Z',false);
+         computer = new Player('#',false);
+      }
+      else { //Computer v Computer
          p = 2;
          player = new Player('Z',true);
          computer = new Player('#',true);
       }
 
       while(!gameOver){
-      //while(true){
          if(p == 1){
             play(player, computer, in, board, legalMoves);
             gameOver = stateCheck(player, computer);
@@ -96,52 +143,30 @@ public class Othello{
       else
          System.out.println("Tie!");
    }
-   /**
-    * Option for loading a preset 8x8 board in. Must specify what two chars are used
-    * for move pieces to translate them to 'Z' and '#'.
-    * Zeros are used to indicate empty spaces.
-    *
-    * @param   filename   .txt file format.
-    * @param   board      Board to load in
-    * @param   one        One move piece character.
-    * @param   two        Other move piece character.
-    */
-   public static void loadBoard(String filename, char[][] board, char one, char two)
-      throws FileNotFoundException{
-      Scanner sc = new Scanner(new File(filename));
-
-      int r = 0;
-      int c = 0;
-      while(sc.hasNext()){
-         String temp = sc.nextLine();
-         for(int k = 0; k < SIZE; k++){
-            char add = temp.charAt(k);
-            if(add == one)
-               board[r][c] = 'Z';
-            else if(add == two)
-               board[r][c] = '#';
-            else
-               board[r][c] = add;
-         }
-      }
-      sc.close();
-   }
 
   //================================================================================
   // Gameplay Methods
   //================================================================================
 
    public static void play(Player current, Player enemy, Scanner in,
-    char[][] board, ArrayList<Move> legalMoves){
-      validSearch(current.symbol, enemy.symbol, board, legalMoves); //fill arraylist with possible moves
+    char[][] board, ArrayList<Move> legalMoves) throws IndexOutOfBoundsException{
+      //Fill arraylist with possible moves
+      validSearch(current.symbol, enemy.symbol, board, legalMoves);
 
-    //print board with legal moves
+      //print board with legal moves
       printBoard(board, legalMoves);
       System.out.println("Current Scores: ");
-      System.out.println(current.symbol + ": " + current.score);
-      System.out.println(enemy.symbol + ": " + enemy.score);
+      if(current.symbol == 'Z'){
+         System.out.println(ANSI_CYAN+current.symbol + ": " + current.score+ANSI_RESET);
+         System.out.println(ANSI_RED+enemy.symbol + ": " + enemy.score+ANSI_RESET);
+      }
+      else{
+        System.out.println(ANSI_RED+current.symbol + ": " + current.score+ANSI_RESET);
+        System.out.println(ANSI_CYAN+enemy.symbol + ": " + enemy.score+ANSI_RESET);
+      }
       printLegalMoves(legalMoves);
-      Move chosen;
+
+      Move chosen = null;
       if(legalMoves.size() == 0){ //if there are no valid moves
          if(skipped)
             gameOver = true;
@@ -152,33 +177,49 @@ public class Othello{
       else{
          skipped = false;
          if(current.symbol == 'Z'){
-            System.out.println(ANSI_CYAN+"Pick a move!"+ANSI_RESET);
+            System.out.println(ANSI_CYAN+"Pick a move! Z"+ANSI_RESET);
          }
          else{
-            System.out.println(ANSI_RED+"Pick a move!"+ANSI_RESET);
+            System.out.println(ANSI_RED+"Pick a move! #"+ANSI_RESET);
          }
          if(!current.ai){ //if player is human
-         //need to check for valid input
-
-            chosen = legalMoves.get(in.nextInt());
+           int choice;
+           boolean valid = false;
+           while(!valid){
+             try {
+               chosen = legalMoves.get(in.nextInt());
+               valid = true;
+             }
+             catch(IndexOutOfBoundsException e){
+               System.out.println("Please enter a valid move number.");
+             }
+           }
          }
          else{ //if computer
-
-            if(current.symbol == 'Z')
-               chosen = minimax(board, current, enemy, System.nanoTime(), legalMoves);
+           if(cVc){
+            if(current.symbol == '#')
+               chosen = alphabeta(board, current, enemy, System.nanoTime(), legalMoves);
             else{
+
+
                int random = (int)(Math.random()*(legalMoves.size()));
                System.out.println(random);
                chosen = legalMoves.get(random);
             }
+          }
+          else{
+            chosen = alphabeta(board, current, enemy, System.nanoTime(), legalMoves);
+          }
          }
-         //flip valid pieces
 
+         //Flip valid pieces
          board = flip(chosen, current, enemy, board);
+         //Update score
          current.score++;
          scoreUpdate(board, current, enemy);
       }
    }
+
    /**
     * Check for the end of the game.
     *
@@ -194,6 +235,7 @@ public class Othello{
       else
          return false;
    }
+
    /**
     * Calculate score based on the number of pieces on the board and update Player values.
     *
@@ -214,20 +256,25 @@ public class Othello{
       }
    }
 
+
+
  //================================================================================
  // Minimax Search
  //================================================================================
 
    //min wants to return the minimum of the maximum values. (minValue)
    //but max wants to return the maximum of the minimum values. (maxValue)
-   public static Move minimax(char[][] b, Player min, Player max, long startTime,
+   public static Move alphabeta(char[][] b, Player min, Player max, long startTime,
    ArrayList<Move> legalMoves) {
       if(legalMoves.size() == 1) //if there is only one possible move
          return legalMoves.get(0);
       Value prev = null;
       Value best = null;
       for(int d = 2; d < 20; d++){ //iterative deepening
-         best = minValue(b, min, max, d, 1, legalMoves, startTime, -1000, 1000);
+        // if(min.symbol == 'Z')
+            best = minValue(b, min, max, d, 1, legalMoves, startTime, -1000, 1000);
+        // else
+        //    best = maxValue(b, min, max, d, 1, legalMoves, startTime, -1000, 1000);
          if(best.cutoff){
             return prev.move;
          }
@@ -246,7 +293,7 @@ public class Othello{
    public static Value maxValue(char[][] b, Player min, Player max, int depth, int currentDepth,
     ArrayList<Move> legalMoves, long startTime, int alpha, int beta){
       //if 4.9 seconds have elapsed
-      if(System.nanoTime() - startTime > 4.9*1000000000){
+      if(System.nanoTime() - startTime > TIME_LIMIT){
          return new Value(true);
       }
 
@@ -269,22 +316,12 @@ public class Othello{
          bCopy = flip(a, max, min, bCopy); //pick move a and update the board
          validSearch(min.symbol, max.symbol, bCopy, legal); //find new legal moves for next player based on move a
 
-        //  System.out.println("max");
-        //  System.out.println(a);
-        //  printBoard(bCopy, legal);
-        //  System.out.println("Current Depth: "+ currentDepth);
-
          Value returned = minValue(bCopy, min, max, depth, currentDepth+1, legal, startTime, alpha, beta);
          if(returned.cutoff){
             return returned;
          }
          int low = returned.val;
-         // System.out.println("Heuristic: "+ low+ " Depth: " + currentDepth);
-         //return maximum of minimum values
-        //  if(v < low){
-        //     v = low;
-        //     chosen = a;
-        //  }
+
          if(v < low){
             equal.clear();
             v = low;
@@ -309,13 +346,12 @@ public class Othello{
          return best;
       }
       return equal.get(0);
-      //return new Value(chosen, v);
    }
 
    public static Value minValue(char[][] b, Player min, Player max, int depth, int currentDepth,
     ArrayList<Move> legalMoves, long startTime, int alpha, int beta){
       //if 4.9 seconds have elapsed
-      if(System.nanoTime() - startTime > 4.9*1000000000){
+      if(System.nanoTime() - startTime > TIME_LIMIT){
          return new Value(true);
       }
 
@@ -325,7 +361,7 @@ public class Othello{
       //store heuristic value
       int v = 1000;
       ArrayList<Value> equal = new ArrayList<Value>();
-      //Move chosen = null;
+
       for(Move a: legalMoves){
         //for holding a copy of the array to make moves on
          char[][] bCopy = new char[SIZE][SIZE];
@@ -338,11 +374,6 @@ public class Othello{
        //find min value of result of picking legalMove a
          bCopy = flip(a, min, max, bCopy); //pick move a and update the board
          validSearch(max.symbol, min.symbol, bCopy, legal); //find new legal moves for other player based on move a
-
-        //  System.out.println("min");
-        //  System.out.println(a);
-        //  printBoard(bCopy, legal);
-        //  System.out.println("Current Depth: "+ currentDepth);
 
          //return minimum of maximum value
          Value returned = maxValue(bCopy, min, max, depth, currentDepth+1, legal, startTime, alpha, beta);
@@ -377,6 +408,7 @@ public class Othello{
       }
       return equal.get(0);
    }
+
    //evaluate position from min's perspective
    public static int heuristic(char[][] board, Player min, Player max,
       ArrayList<Move> legalMoves, int depth){
