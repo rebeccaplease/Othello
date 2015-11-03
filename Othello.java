@@ -10,6 +10,7 @@ public class Othello{
    static boolean skipped = false; //keep track if previous turn was skipped
    static boolean gameOver = false; //True if two turns are skipped in a row
    static long TIME_LIMIT = 4900000000L; //Time limit for search in nanoseconds
+   static long delay = 10000000L;
    public static int TURN = 1;
 
    //Color constants for printing
@@ -30,11 +31,27 @@ public class Othello{
 /**
  * Initialize board. Use init for new games and loadBoard for loading in a board.
  */
-   public static void main(String[] args){
+   public static void main(String[] args) throws InputMismatchException, FileNotFoundException{
      char[][] board = new char[8][8];
-     init(board);
-     //loadBoard("test.txt", board, '1', '2');
-     start(board);
+     Scanner sc = new Scanner(System.in);
+     System.out.println("Would you like to start[1] or load a board?[2]");
+     boolean valid = false;
+     int select = 0;
+     while(!valid){
+       try{
+         select = sc.nextInt();
+         valid = true;
+       }
+       catch(InputMismatchException e){
+         System.out.println("Please enter a valid number.");
+       }
+     }
+     if(select == 1)
+      init(board);
+     else{
+      loadBoard(sc, board, '1', '2');
+    }
+     start(sc, board);
    }
 
 /**
@@ -63,25 +80,36 @@ public class Othello{
  * @param   one        One move piece character.
  * @param   two        Other move piece character.
  */
-     public static void loadBoard(String filename, char[][] board, char one, char two)
-        throws FileNotFoundException{
-        Scanner sc = new Scanner(new File(filename));
-
-        int r = 0;
-        int c = 0;
-        while(sc.hasNext()){
-           String temp = sc.nextLine();
-           for(int k = 0; k < SIZE; k++){
-              char add = temp.charAt(k);
+     public static void loadBoard(Scanner input, char[][] board, char one, char two){
+       System.out.println("Enter a filename.");
+       Scanner file = null;
+       boolean valid = false;
+       while(!valid){
+         try{
+           file = new Scanner(new File(input.next()));
+           valid = true;
+         }
+         catch(FileNotFoundException e){
+           System.out.println("Please a valid filename.");
+         }
+       }
+        //while(sc.hasNext()){
+        for(int r = 0; r < SIZE; r++){
+           String temp = file.nextLine();
+           //System.out.println(temp);
+           for(int c = 0; c < SIZE; c++){
+              char add = temp.charAt(c*2);
               if(add == one)
                  board[r][c] = 'Z';
               else if(add == two)
                  board[r][c] = '#';
               else
-                 board[r][c] = add;
+                 board[r][c] = blank;
+              System.out.print(add + " ");
            }
+           System.out.println();
         }
-        sc.close();
+        file.close();
      }
  /**
   * Start gameplay and continue until game is over.
@@ -92,16 +120,24 @@ public class Othello{
   *
   * @param   board     Game board.
   */
-    public static void start(char[][] board){
+    public static void start(Scanner in, char[][] board) throws InputMismatchException{
       ArrayList<Move> legalMoves = new ArrayList<Move>();
+      printBoard(board, legalMoves);
 
-      Scanner in = new Scanner(System.in);
-
-      System.out.println("Do you want to go first[1] or second[2]? [3] for PvP. [4] for computer v. computer");
+      System.out.println("Do you want to go first[1] (#) or second[2] (Z)? [3] for PvP. [4] for computer v. computer");
       int p = in.nextInt();
       if(p != 3){
         System.out.println("Enter a time limit for the computer in seconds.");
+        boolean valid = false;
+        while(!valid){
+        try {
         TIME_LIMIT = in.nextInt() * 1000000000L;
+        valid = true;
+      }
+      catch(InputMismatchException e){
+        System.out.println("Please type in an integer.");
+      }
+    }
       }
 
       System.out.println();
@@ -127,6 +163,7 @@ public class Othello{
          computer = new Player('#',true);
          cVc = true;
       }
+      scoreUpdate(board, player, computer);
 
       while(!gameOver){ //break out of loop?
          if(p == 1){
@@ -157,15 +194,20 @@ public class Othello{
       else
         System.out.println("Your score: " + player.score);
       System.out.println("Computer " + computer.symbol + " score: "+ computer.score);
-      if(player.score > computer.score)
+      if(player.score > computer.score){
+        int displayScore = player.score - computer.score;
         if(cVc)
-          System.out.println("Computer "+ player.symbol + " wins!");
+          System.out.println("Computer "+ player.symbol + " wins! "+ displayScore);
         else
-          System.out.println("You win!");
-      else if(player.score < computer.score)
-         System.out.println("Computer "+ computer.symbol + " wins!");
+          System.out.println("You win! " + displayScore);
+        }
+      else if(player.score < computer.score){
+        int displayScore = computer.score - player.score;
+         System.out.println("Computer "+ computer.symbol + " wins! "+ displayScore);
+       }
       else
          System.out.println("Tie!");
+      in.close();
    }
 
   //================================================================================
@@ -283,7 +325,7 @@ public class Othello{
 
 
  //================================================================================
- // Minimax Search
+ // Alphabeta Search
  //================================================================================
 
    //min wants to return the minimum of the maximum values. (minValue)
@@ -294,12 +336,13 @@ public class Othello{
          return legalMoves.get(0);
       Value prev = null;
       Value best = null;
-      for(int d = 2; d < 20; d++){ //iterative deepening
-        // if(min.symbol == 'Z')
-            best = minValue(b, min, max, d, 1, legalMoves, startTime, -1000, 1000, ai);
-        // else
-        //    best = maxValue(b, min, max, d, 1, legalMoves, startTime, -1000, 1000);
+      for(int d = 1; d < 20; d++){ //iterative deepening
+        if(ai == 1) //player 2 uses min while player 1 uses max
+            best = minValue(b, min, max, d, 0, legalMoves, startTime, -1000, 1000, ai);
+        else
+            best = maxValue(b, min, max, d, 0, legalMoves, startTime, -1000, 1000, ai);
          if(best.cutoff){
+           System.out.println("Cutoff! time: " + (System.nanoTime()-startTime)/1000000000.0 + " seconds \n");
             return prev.move;
          }
 
@@ -307,25 +350,27 @@ public class Othello{
             return best.move;
          }
          System.out.println("depth: "+d);
-         System.out.println("time: " + (System.nanoTime()-startTime)/1000000000.0 + "\n");
+         System.out.println("time: " + (System.nanoTime()-startTime)/1000000000.0 + " seconds \n");
          prev = best;
 
       }
       return best.move; //return position of best move
    }
    //returns heuristic value for the move in question
+   //max wants the minimum result of the maximum values (negative scores are better for max
+   //while positive scores are better for min)
    public static Value maxValue(char[][] b, Player min, Player max, int depth, int currentDepth,
     ArrayList<Move> legalMoves, long startTime, int alpha, int beta, int ai){
       //if 4.9 seconds have elapsed
-      if(System.nanoTime() - startTime > TIME_LIMIT){
+      if(System.nanoTime() - startTime > TIME_LIMIT-delay){ //subtract 1/10 of a second
          return new Value(true);
       }
 
       if(legalMoves.size() == 0 || depth == currentDepth){
         if(ai == 1)
-          return new Value(heuristic1(b, max, min, legalMoves, currentDepth));
+          return new Value(heuristic1(b, min, max, legalMoves, currentDepth));
         else if (ai == 2)
-          return new Value(heuristic2(b, max, min, legalMoves, currentDepth));
+          return new Value(heuristic2(b, min, max, legalMoves, currentDepth));
       }
       int v = -1000;
       ArrayList<Value> equal = new ArrayList<Value>();
@@ -376,7 +421,7 @@ public class Othello{
    public static Value minValue(char[][] b, Player min, Player max, int depth, int currentDepth,
     ArrayList<Move> legalMoves, long startTime, int alpha, int beta, int ai){
       //if 4.9 seconds have elapsed
-      if(System.nanoTime() - startTime > TIME_LIMIT){
+      if(System.nanoTime() - startTime > TIME_LIMIT-delay){
          return new Value(true);
       }
 
@@ -489,7 +534,7 @@ public class Othello{
       }
       return h-depth;
    }
-   //evaluate position from min's perspective
+   //evaluate position from min's perspective - add points to better positions for min
    public static int heuristic2(char[][] board, Player min, Player max,
       ArrayList<Move> legalMoves, int depth){
         //legalMoves contains min's legal moves
