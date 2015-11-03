@@ -10,6 +10,7 @@ public class Othello{
    static boolean skipped = false; //keep track if previous turn was skipped
    static boolean gameOver = false; //True if two turns are skipped in a row
    static long TIME_LIMIT = 4900000000L; //Time limit for search in nanoseconds
+   public static int TURN = 1;
 
    //Color constants for printing
    public static final String ANSI_RESET = "\u001B[0m";
@@ -96,8 +97,14 @@ public class Othello{
 
       Scanner in = new Scanner(System.in);
 
-      System.out.println("Do you want to go first[1] or second[2]? [3] for PvP. [3] for computer v. computer");//need to catch invalid inputs
+      System.out.println("Do you want to go first[1] or second[2]? [3] for PvP. [4] for computer v. computer");
       int p = in.nextInt();
+      if(p != 3){
+        System.out.println("Enter a time limit for the computer in seconds.");
+        TIME_LIMIT = in.nextInt() * 1000000000L;
+      }
+
+      System.out.println();
       boolean cVc = false;
       Player player;
       Player computer;
@@ -126,6 +133,9 @@ public class Othello{
             play(player, computer, in, false, board, legalMoves);
             gameOver = stateCheck(player, computer);
 
+            if(gameOver)
+              break;
+
             play(computer, player, in, false, board, legalMoves);
             gameOver = stateCheck(player, computer);
          }
@@ -133,17 +143,27 @@ public class Othello{
             play(computer, player, in, cVc, board, legalMoves);
             gameOver = stateCheck(player, computer);
 
+            if(gameOver)
+              break;
+
             play(player, computer, in, cVc, board, legalMoves);
             gameOver = stateCheck(player, computer);
          }
       }
+      legalMoves.clear();
       printBoard(board, legalMoves);
-      System.out.println("Your score: " + player.score);
-      System.out.println("Computer score: " + computer.score);
+      if(cVc)
+        System.out.println("Computer " + player.symbol + " score: " + player.score);
+      else
+        System.out.println("Your score: " + player.score);
+      System.out.println("Computer " + computer.symbol + " score: "+ computer.score);
       if(player.score > computer.score)
-         System.out.println("You win!");
+        if(cVc)
+          System.out.println("Computer "+ player.symbol + " wins!");
+        else
+          System.out.println("You win!");
       else if(player.score < computer.score)
-         System.out.println("Computer wins!");
+         System.out.println("Computer "+ computer.symbol + " wins!");
       else
          System.out.println("Tie!");
    }
@@ -201,13 +221,14 @@ public class Othello{
          }
          else{ //if computer
           if(cVc){
-           if(current.symbol == '#')
+           if(current.symbol == 'Z')
+              //player Z uses heuristic 1
               chosen = alphabeta(board, current, enemy, System.nanoTime(), legalMoves, 1);
             else{
               chosen = alphabeta(board, current, enemy, System.nanoTime(), legalMoves, 2);
-              int random = (int)(Math.random()*(legalMoves.size()));
-              System.out.println(random);
-              chosen = legalMoves.get(random);
+              // int random = (int)(Math.random()*(legalMoves.size()));
+              // System.out.println(random);
+              // chosen = legalMoves.get(random);
              }
           }
           else{
@@ -220,6 +241,7 @@ public class Othello{
          current.score++;
          scoreUpdate(board, current, enemy);
       }
+      TURN++;
    }
 
    /**
@@ -362,7 +384,7 @@ public class Othello{
         if(ai == 1)
          return new Value(heuristic1(b, min, max, legalMoves, currentDepth));
         else if (ai == 2)
-        return new Value(heuristic2(b, min, max, legalMoves, currentDepth));
+          return new Value(heuristic2(b, min, max, legalMoves, currentDepth));
       }
       //store heuristic value
       int v = 1000;
@@ -430,7 +452,7 @@ public class Othello{
                }
                //outside move
                else if(n == 0 || m == 0 || n == SIZE-1 || m == SIZE-1){
-                 //adjacent to corner piece
+                 //adjacent to corner piece (C or X)
                  if(n == 1 || n == SIZE-2 || m == 1 || m == SIZE-2){
                    h -= 2;
                  }
@@ -470,22 +492,28 @@ public class Othello{
    //evaluate position from min's perspective
    public static int heuristic2(char[][] board, Player min, Player max,
       ArrayList<Move> legalMoves, int depth){
+        //legalMoves contains min's legal moves
       int h = 0;
       int outside = 5;
-      int corner = 20;
+      int corner = 25;
+      int other = 1;
+      int corx = 2;
       for(int n = 0; n < SIZE; n++){
          for(int m = 0; m < SIZE; m++){
             char c = board[n][m];
             if(c == min.symbol){
               //corner move
                if((n == 0 || n == SIZE-1) && (m == 0 || m == SIZE-1)){
+                 if(TURN + depth > 20)
+                  h += corner-5;
+                 else
                   h += corner;
                }
                //outside move
                else if(n == 0 || m == 0 || n == SIZE-1 || m == SIZE-1){
-                 //adjacent to corner piece
+                 //adjacent to corner piece (C or X)
                  if(n == 1 || n == SIZE-2 || m == 1 || m == SIZE-2){
-                   h -= 2;
+                   h -= corx;
                  }
                  else{
                   h += outside;
@@ -493,19 +521,24 @@ public class Othello{
                }
                //any other position
                else{
-                  h++;
+                  if(TURN + depth > 15)
+                    h += other;
                }
             }
 
-            if(c == max.symbol){
-            //corner move
+            if(c == max.symbol){ //multiply all by -1 if max.symbol
+              //corner move
                if((n == 0 || n == SIZE-1) && (m == 0 || m == SIZE-1)){
+                 if(TURN + depth > 15)
+                  h -= corner+5;
+                 else
                   h -= corner;
                }
                //outside move
                else if(n == 0 || m == 0 || n == SIZE-1 || m == SIZE-1){
+                 //adjacent to corner piece (C or X)
                  if(n == 1 || n == SIZE-2 || m == 1 || m == SIZE-2){
-                   h += 2;
+                   h += corx;
                  }
                  else{
                   h -= outside;
@@ -513,7 +546,8 @@ public class Othello{
                }
                //any other position
                else{
-                  h--;
+                  if(TURN + depth > 20)
+                    h -= other;
                }
             }
          }
