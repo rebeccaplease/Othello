@@ -10,7 +10,7 @@ public class Othello{
    static boolean skipped = false; //keep track if previous turn was skipped
    static boolean gameOver = false; //True if two turns are skipped in a row
    static long TIME_LIMIT = 4900000000L; //Time limit for search in nanoseconds
-   static long delay = 10000000L;
+   static long delay = 1000000L;
    public static int TURN = 1;
 
    //Color constants for printing
@@ -189,24 +189,44 @@ public class Othello{
       }
       legalMoves.clear();
       printBoard(board, legalMoves);
-      if(cVc)
-        System.out.println("Computer " + player.symbol + " score: " + player.score);
-      else
-        System.out.println("Your score: " + player.score);
-      System.out.println("Computer " + computer.symbol + " score: "+ computer.score);
-      if(player.score > computer.score){
-        int displayScore = player.score - computer.score;
-        if(cVc)
-          System.out.println("Computer "+ player.symbol + " wins! "+ displayScore);
+      if(p == 3) {//player v player
+        System.out.println("Player " + computer.symbol + " score: "+ computer.score);
+        System.out.println("Player " + player.symbol + " score: "+ player.score);
+        if(player.score > computer.score){
+          int displayScore = player.score - computer.score;
+          System.out.println("Player "+ player.symbol + " wins! "+ displayScore);
+          }
+        else if(player.score < computer.score){
+          int displayScore = computer.score - player.score;
+          System.out.println("Player "+ computer.symbol + " wins! "+ displayScore);
+         }
         else
-          System.out.println("You win! " + displayScore);
+           System.out.println("Tie!");
+      }
+      else{
+        if(cVc){
+          System.out.println("Computer " + player.symbol + " score: " + player.score);
+          System.out.println("Computer " + computer.symbol + " score: "+ computer.score);
         }
-      else if(player.score < computer.score){
-        int displayScore = computer.score - player.score;
-         System.out.println("Computer "+ computer.symbol + " wins! "+ displayScore);
-       }
-      else
-         System.out.println("Tie!");
+        else{
+          System.out.println("Computer " + computer.symbol + " score: "+ computer.score);
+          System.out.println("Your score: " + player.score);
+        }
+
+        if(player.score > computer.score){
+          int displayScore = player.score - computer.score;
+          if(cVc)
+            System.out.println("Computer "+ player.symbol + " wins! "+ displayScore);
+          else
+            System.out.println("You win! " + displayScore);
+          }
+        else if(player.score < computer.score){
+          int displayScore = computer.score - player.score;
+           System.out.println("Computer "+ computer.symbol + " wins! "+ displayScore);
+         }
+        else
+           System.out.println("Tie!");
+      }
       in.close();
    }
 
@@ -267,7 +287,9 @@ public class Othello{
               //player Z uses heuristic 1
               chosen = alphabeta(board, current, enemy, System.nanoTime(), legalMoves, 1);
             else{
-              chosen = alphabeta(board, current, enemy, System.nanoTime(), legalMoves, 2);
+              chosen = alphabeta(board, enemy, current, System.nanoTime(), legalMoves, 2);
+              //because perspective is changing, switch current and enemy so that the same
+              //player is always min or always max
               // int random = (int)(Math.random()*(legalMoves.size()));
               // System.out.println(random);
               // chosen = legalMoves.get(random);
@@ -439,7 +461,7 @@ public class Othello{
         //for holding a copy of the array to make moves on
          char[][] bCopy = new char[SIZE][SIZE];
         //copy the array
-        copyArray(b, bCopy);
+         copyArray(b, bCopy);
 
          ArrayList<Move> legal = new ArrayList<Move>();
 
@@ -486,7 +508,7 @@ public class Othello{
       ArrayList<Move> legalMoves, int depth){
       int h = 0;
       int outside = 5;
-      int corner = 20;
+      int corner = 40;
       for(int n = 0; n < SIZE; n++){
          for(int m = 0; m < SIZE; m++){
             char c = board[n][m];
@@ -537,10 +559,9 @@ public class Othello{
    //evaluate position from min's perspective - add points to better positions for min
    public static int heuristic2(char[][] board, Player min, Player max,
       ArrayList<Move> legalMoves, int depth){
-        //legalMoves contains min's legal moves
       int h = 0;
       int outside = 5;
-      int corner = 25;
+      int corner = 45;
       int other = 1;
       int corx = 2;
       for(int n = 0; n < SIZE; n++){
