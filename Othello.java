@@ -287,9 +287,7 @@ public class Othello{
               //player Z uses heuristic 1
               chosen = alphabeta(board, current, enemy, System.nanoTime(), legalMoves, 1);
             else{
-              chosen = alphabeta(board, enemy, current, System.nanoTime(), legalMoves, 2);
-              //because perspective is changing, switch current and enemy so that the same
-              //player is always min or always max
+              chosen = alphabeta(board, current, enemy, System.nanoTime(), legalMoves, 2);
               // int random = (int)(Math.random()*(legalMoves.size()));
               // System.out.println(random);
               // chosen = legalMoves.get(random);
@@ -352,17 +350,17 @@ public class Othello{
 
    //min wants to return the minimum of the maximum values. (minValue)
    //but max wants to return the maximum of the minimum values. (maxValue)
-   public static Move alphabeta(char[][] b, Player min, Player max, long startTime,
+   public static Move alphabeta(char[][] b, Player max, Player min, long startTime,
    ArrayList<Move> legalMoves, int ai) {
       if(legalMoves.size() == 1) //if there is only one possible move
          return legalMoves.get(0);
       Value prev = null;
       Value best = null;
       for(int d = 1; d < 20; d++){ //iterative deepening
-        if(ai == 1) //player 2 uses min while player 1 uses max
-            best = minValue(b, min, max, d, 0, legalMoves, startTime, -1000, 1000, ai);
-        else
-            best = maxValue(b, min, max, d, 0, legalMoves, startTime, -1000, 1000, ai);
+      //  if(ai == 1) //player 2 uses min while player 1 uses max
+        //    best = minValue(b, min, max, d, 0, legalMoves, startTime, -1000, 1000, ai);
+        //else
+            best = maxValue(b, max, min, d, 0, legalMoves, startTime, -1000, 1000, ai);
          if(best.cutoff){
            System.out.println("Cutoff! time: " + (System.nanoTime()-startTime)/1000000000.0 + " seconds \n");
             return prev.move;
@@ -381,7 +379,7 @@ public class Othello{
    //returns heuristic value for the move in question
    //max wants the minimum result of the maximum values (negative scores are better for max
    //while positive scores are better for min)
-   public static Value maxValue(char[][] b, Player min, Player max, int depth, int currentDepth,
+   public static Value maxValue(char[][] b, Player max, Player min, int depth, int currentDepth,
     ArrayList<Move> legalMoves, long startTime, int alpha, int beta, int ai){
       //if 4.9 seconds have elapsed
       if(System.nanoTime() - startTime > TIME_LIMIT-delay){ //subtract 1/10 of a second
@@ -390,9 +388,9 @@ public class Othello{
 
       if(legalMoves.size() == 0 || depth == currentDepth){
         if(ai == 1)
-          return new Value(heuristic1(b, min, max, legalMoves, currentDepth));
+          return new Value(heuristic1(b, max, min, legalMoves, currentDepth));
         else if (ai == 2)
-          return new Value(heuristic2(b, min, max, legalMoves, currentDepth));
+          return new Value(heuristic2(b, max, min, legalMoves, currentDepth));
       }
       int v = -1000;
       ArrayList<Value> equal = new ArrayList<Value>();
@@ -408,7 +406,7 @@ public class Othello{
          bCopy = flip(a, max, min, bCopy); //pick move a and update the board
          validSearch(min.symbol, max.symbol, bCopy, legal); //find new legal moves for next player based on move a
 
-         Value returned = minValue(bCopy, min, max, depth, currentDepth+1, legal, startTime, alpha, beta, ai);
+         Value returned = minValue(bCopy, max, min, depth, currentDepth+1, legal, startTime, alpha, beta, ai);
          if(returned.cutoff){
             return returned;
          }
@@ -440,7 +438,7 @@ public class Othello{
       return equal.get(0);
    }
 
-   public static Value minValue(char[][] b, Player min, Player max, int depth, int currentDepth,
+   public static Value minValue(char[][] b, Player max, Player min, int depth, int currentDepth,
     ArrayList<Move> legalMoves, long startTime, int alpha, int beta, int ai){
       //if 4.9 seconds have elapsed
       if(System.nanoTime() - startTime > TIME_LIMIT-delay){
@@ -449,9 +447,9 @@ public class Othello{
 
       if(legalMoves.size() == 0 || depth == currentDepth){
         if(ai == 1)
-         return new Value(heuristic1(b, min, max, legalMoves, currentDepth));
+         return new Value(heuristic1(b, max, min, legalMoves, currentDepth));
         else if (ai == 2)
-          return new Value(heuristic2(b, min, max, legalMoves, currentDepth));
+          return new Value(heuristic2(b, max, min, legalMoves, currentDepth));
       }
       //store heuristic value
       int v = 1000;
@@ -470,7 +468,7 @@ public class Othello{
          validSearch(max.symbol, min.symbol, bCopy, legal); //find new legal moves for other player based on move a
 
          //return minimum of maximum value
-         Value returned = maxValue(bCopy, min, max, depth, currentDepth+1, legal, startTime, alpha, beta, ai);
+         Value returned = maxValue(bCopy, max, min, depth, currentDepth+1, legal, startTime, alpha, beta, ai);
          if(returned.cutoff){
             return returned;
          }
@@ -504,7 +502,7 @@ public class Othello{
    }
 
    //evaluate position from min's perspective
-   public static int heuristic1(char[][] board, Player min, Player max,
+   public static int heuristic1(char[][] board, Player max, Player min,
       ArrayList<Move> legalMoves, int depth){
       int h = 0;
       int outside = 5;
@@ -512,7 +510,7 @@ public class Othello{
       for(int n = 0; n < SIZE; n++){
          for(int m = 0; m < SIZE; m++){
             char c = board[n][m];
-            if(c == min.symbol){
+            if(c == max.symbol){
               //corner move
                if((n == 0 || n == SIZE-1) && (m == 0 || m == SIZE-1)){
                   h += corner;
@@ -533,7 +531,7 @@ public class Othello{
                }
             }
 
-            if(c == max.symbol){
+            if(c == min.symbol){
             //corner move
                if((n == 0 || n == SIZE-1) && (m == 0 || m == SIZE-1)){
                   h -= corner;
@@ -557,7 +555,7 @@ public class Othello{
       return h-depth;
    }
    //evaluate position from min's perspective - add points to better positions for min
-   public static int heuristic2(char[][] board, Player min, Player max,
+   public static int heuristic2(char[][] board, Player max, Player min,
       ArrayList<Move> legalMoves, int depth){
       int h = 0;
       int outside = 5;
