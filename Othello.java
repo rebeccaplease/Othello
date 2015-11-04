@@ -100,9 +100,9 @@ public class Othello{
          for(int c = 0; c < SIZE; c++){
             char add = temp.charAt(c*2);
             if(add == one)
-               board[r][c] = 'Z';
-            else if(add == two)
                board[r][c] = '#';
+            else if(add == two)
+               board[r][c] = 'Z';
             else
                board[r][c] = blank;
             System.out.print(add + " ");
@@ -124,8 +124,14 @@ public class Othello{
       ArrayList<Move> legalMoves = new ArrayList<Move>();
       printBoard(board, legalMoves);
 
-      System.out.println("Do you want to go first[1] or second[2] ? [3] for PvP. [4] for computer v. computer");
-      int p = in.nextInt();
+      System.out.println("Do you want to go first[1] or second[2] ? [3] for PvP. [4 or any integer] for computer v. computer");
+      int p = 0;
+      try{
+        p = in.nextInt();
+      }
+      catch(InputMismatchException e){
+        System.out.println("Please enter a valid integer.");
+      }
       char pp = '0';
       if(p == 1 || p == 2){
          System.out.println("Would you like to be [Z] or [#]?");
@@ -274,8 +280,10 @@ public class Othello{
       if(legalMoves.size() == 0){ //if there are no valid moves
          if(skipped)
             gameOver = true;
-         else
+         else{
             skipped = true;
+            System.out.println("Skipped! No available moves.");
+          }
       }
 
       else{
