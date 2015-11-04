@@ -31,18 +31,18 @@ public class Othello{
 /**
  * Initialize board. Use init for new games and loadBoard for loading in a board.
  */
-   public static void main(String[] args) throws InputMismatchException, FileNotFoundException{
+   public static void main(String[] args){
       char[][] board = new char[8][8];
       Scanner sc = new Scanner(System.in);
-      System.out.println("Would you like to start[1] or load a board?[2]");
+      System.out.println("Would you like to start[1] or load a board?[2 or any other integer]");
       boolean valid = false;
       int select = 0;
       while(!valid){
          try{
-            select = sc.nextInt();
+            select = Integer.parseInt(sc.next());
             valid = true;
          }
-         catch(InputMismatchException e){
+         catch(Exception e){
             System.out.println("Please enter a valid number.");
          }
       }
@@ -120,17 +120,21 @@ public class Othello{
   *
   * @param   board     Game board.
   */
-   public static void start(Scanner in, char[][] board) throws InputMismatchException{
+   public static void start(Scanner in, char[][] board){
       ArrayList<Move> legalMoves = new ArrayList<Move>();
       printBoard(board, legalMoves);
 
       System.out.println("Do you want to go first[1] or second[2] ? [3] for PvP. [4 or any integer] for computer v. computer");
       int p = 0;
-      try{
-        p = in.nextInt();
-      }
-      catch(InputMismatchException e){
-        System.out.println("Please enter a valid integer.");
+      boolean valid = false;
+      while(!valid){
+        try{
+          p = Integer.parseInt(in.next());
+          valid = true;
+        }
+        catch(Exception e){
+          System.out.println("Please enter a valid integer.");
+        }
       }
       char pp = '0';
       if(p == 1 || p == 2){
@@ -144,16 +148,18 @@ public class Othello{
       }
       if(p != 3){
          System.out.println("Enter a time limit for the computer in seconds.");
-         boolean valid = false;
+         valid = false;
+         int t = 0;
          while(!valid){
             try {
-               TIME_LIMIT = in.nextInt() * 1000000000L;
+               t = Integer.parseInt(in.next());
                valid = true;
             }
-            catch(InputMismatchException e){
+            catch(Exception e){
                System.out.println("Please type in an integer.");
             }
          }
+         TIME_LIMIT = t * 1000000000L; //convert to ns
       }
 
       System.out.println();
