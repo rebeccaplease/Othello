@@ -180,22 +180,28 @@ public class Othello{
       while(!gameOver){ //break out of loop?
          if(p == 1){
             play(player, computer, in, false, board, legalMoves);
+            if(gameOver)
+               break;
             gameOver = stateCheck(player, computer);
-
             if(gameOver)
                break;
 
             play(computer, player, in, false, board, legalMoves);
+            if(gameOver)
+               break;
             gameOver = stateCheck(player, computer);
          }
          else {
             play(computer, player, in, cVc, board, legalMoves);
+            if(gameOver)
+               break;
             gameOver = stateCheck(player, computer);
-
             if(gameOver)
                break;
 
             play(player, computer, in, cVc, board, legalMoves);
+            if(gameOver)
+               break;
             gameOver = stateCheck(player, computer);
          }
       }
