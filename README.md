@@ -1,12 +1,19 @@
 # Othello
 
+ECE 469 Artificial Intelligence 
+
+The Cooper Union for the Advancement of Science and Art
+
+http://faculty.cooper.edu/sable2/courses/fall2015/ece469/
+
 Implements alpha-beta search with iterative deepening to find the best move. 
 
 To run in the command line: 
-'''
+```
 javac Othello.java
+
 java Othello
-'''
+```
 The option to start a new game[1] or load in a board[2] is given. 
 
 Entering 1 will start a new game with the default starting board.  
